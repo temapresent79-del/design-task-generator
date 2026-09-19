@@ -44,6 +44,7 @@ header{display:flex; align-items:center; justify-content:space-between; gap:18px
 .p-row:last-child{border-bottom:none}
 .p-head{display:flex; flex-direction:column; align-items:flex-start; gap:8px}
 .p-label{font-weight:700; font-size:14.5px; position:relative}
+#styleInfo{display:none}
 .info-btn{width:18px;height:18px;border-radius:50%;border:1.2px solid var(--ink-soft);background:rgba(255,255,255,.5);color:var(--ink-soft);font-size:11px;font-weight:800;font-family:'Manrope',sans-serif;line-height:1;cursor:help;display:inline-flex;align-items:center;justify-content:center;margin-left:7px;vertical-align:1px;transition:border-color .2s,color .2s;padding:0}
 .info-btn:hover,.info-btn:focus{border-color:var(--accent);color:var(--accent)}
 .tip{position:absolute;bottom:calc(100% + 10px);left:60%;transform:translate(-50%,6px);width:max-content;max-width:290px;background:#3E2A1E;color:#F7F1E8;font-size:12.5px;line-height:1.55;font-weight:500;padding:12px 15px;border-radius:16px;box-shadow:0 14px 34px rgba(62,42,30,.4);opacity:0;visibility:hidden;transition:opacity .25s ease .22s,transform .25s ease .22s,visibility 0s .47s;z-index:20;pointer-events:none;letter-spacing:0}
@@ -344,7 +345,7 @@ function syncSrcMode(){
   const db=document.querySelector('input[name=src]:checked').value==="db";
   document.querySelector(".panel").classList.toggle("settings-off",db);
 }
-document.querySelectorAll('input[name=src"]').forEach(r=>r.addEventListener("change",syncSrcMode));
+document.querySelectorAll('input[name="src"]').forEach(r=>r.addEventListener("change",syncSrcMode));
 document.querySelectorAll(".sub-card .sub-head").forEach(h=>{
   h.addEventListener("click",()=>h.parentElement.classList.toggle("open"));
 });
@@ -387,10 +388,10 @@ const genName=()=>rnd(NAME_ADJ)+rnd(NAME_NOUN);
 
 /* ==================== ГЕНЕРАЦИЯ ТЗ ==================== */
 function techBlock(r){
-  if(r.direction==="UI/UX")return `Платформа: ${r.device}. Количество экранов: ${r.screens}. Обязательные элементы: ${r.elements.join(", ")}. Интерактивный прототип, дизайн-система (компоненты, стили, сетка), состояния экранов (default / hover / error / empty).`;
-  if(r.direction==="Вёрстка (HTML/CSS)")return `Семантическая HTML-разметка, современный CSS (Grid/Flexbox, custom properties), адаптив от 320px до 1440px, доступность (контраст, alt, focus-состояния). Устройство: ${r.device}, страниц: ${r.screens}. Обязательные блоки: ${r.elements.join(", ")}.`;
+  if(r.direction==="UI/UX")return `Платформа: ${r.device}. Количество экранов: ${r.screens}. Обязательные элементы: ${Array.isArray(r.elements)?r.elements.join(", "):r.elements}. Интерактивный прототип, дизайн-система (компоненты, стили, сетка), состояния экранов (default / hover / error / empty).`;
+  if(r.direction==="Вёрстка (HTML/CSS)")return `Семантическая HTML-разметка, современный CSS (Grid/Flexbox, custom properties), адаптив от 320px до 1440px, доступность (контраст, alt, focus-состояния). Устройство: ${r.device}, страниц: ${r.screens}. Обязательные блоки: ${Array.isArray(r.elements)?r.elements.join(", "):r.elements}.`;
   if(r.direction==="Графический дизайн")return `Форматы: печать 300 dpi (CMYK) + digital (RGB). Размеры указать в макете. Единая сетка и модульная система для всей серии. Исходники в редактируемом виде + экспорт в PDF/PNG.`;
-  if(r.direction==="Брендинг и айдентика")return `Носители: ${r.carriers}. Включить: ${r.brand.join(", ")}. Логотип в векторе (основной знак + монограмма + версия для тёмного фона), гайдлайн по минимальным отступам и запретам.`;
+  if(r.direction==="Брендинг и айдентика")return `Носители: ${r.carriers}. Включить: ${Array.isArray(r.brand)?r.brand.join(", "):r.brand}. Логотип в векторе (основной знак + монограмма + версия для тёмного фона), гайдлайн по минимальным отступам и запретам.`;
   if(r.direction==="3D")return `Софт: ${r.soft}. Тип модели: ${r.model}. Стиль рендера: ${r.render}. Топология чистая, сцена с освещением (3-point light), минимум 3 ракурса, рендер от 2K.`;
   return `Комплексный проект: минимум два направления должны быть связаны единой айдентикой (например, UI-прототип + 3D-элементы + базовый брендинг).`;
 }
@@ -479,10 +480,10 @@ function generate(surprise){
     `Аудитория: ${low(g.audience||r.audience)}`
   ];
   if(dir==="UI/UX"||dir==="Вёрстка (HTML/CSS)"){
-    paramsList.push(`Устройство: ${low(r.device)}`,`Экранов/страниц: ${r.screens}`,`Обязательные элементы: ${low(r.elements.join(", "))}`);
+    paramsList.push(`Устройство: ${low(r.device)}`,`Экранов/страниц: ${r.screens}`,`Обязательные элементы: ${Array.isArray(r.elements)?low(r.elements.join(", ")):r.elements}`);
   }
   if(dir==="Брендинг и айдентика"){
-    paramsList.push(`Носители: ${low(r.carriers)}`,`Включить: ${low(r.brand.join(", "))}`);
+    paramsList.push(`Носители: ${low(r.carriers)}`,`Включить: ${Array.isArray(r.brand)?low(r.brand.join(", ")):r.brand}`);
   }
   if(dir==="3D"){
     paramsList.push(`Софт: ${r.soft}`,`Тип модели: ${low(r.model)}`,`Рендер: ${low(r.render)}`);
@@ -491,7 +492,7 @@ function generate(surprise){
   S.push({h:"Цель задания",p:`${r.task_type}: ${g.brief}`});
   if(r.mood)S.push({h:"Стиль и мудборд",p:`Стиль — «${g.style||r.style}». Настроение: ${style.mood}. Ключевые слова для мудборда: ${r.industry.toLowerCase()}, ${(g.style||r.style).toLowerCase()}, ${style.graphics.split(",")[0].toLowerCase()}.`});
   else S.push({h:"Стиль",p:`Стиль — «${g.style||r.style}».`});
-  S.push({h:"Айдентика (текстовое описание)",p:`Палитра: ${idn.palette.join(", ")}.<br>Шрифтовая пара: ${idn.fonts}.<br>Логотип: ${idn.logo}.<br>Графические элементы: ${idn.graphics}.`});
+  S.push({h:"Айдентика (текстовое описание)",p:`Палитра: ${Array.isArray(idn.palette)?idn.palette.join(", "):idn.palette}.<br>Шрифтовая пара: ${idn.fonts}.<br>Логотип: ${idn.logo}.<br>Графические элементы: ${idn.graphics}.`});
   if(r.volume==="Подробное ТЗ"){
     S.push({h:"Технические требования",p:techBlock({...r,direction:g.direction||r.direction})});
     S.push({h:"Что нужно сделать (пошагово)",list:stepsBlock({...r,direction:g.direction||r.direction})});
@@ -558,7 +559,7 @@ function toast(msg){
   const t=$("toast");t.textContent=msg;t.classList.add("show");
   clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200);
 }
-$("btnGen").onclick=generate;
+$("btnGen").onclick=()=>generate();
 $("btnSurprise").onclick=()=>{
   PARAMS.forEach(p=>{state[p.key]={mode:"random",value:p.multi?[]:null};
     const seg=document.querySelector(`.seg[data-key="${p.key}"]`);
