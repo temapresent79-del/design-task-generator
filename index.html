@@ -37,6 +37,8 @@ header{display:flex; align-items:center; justify-content:space-between; gap:18px
 .grid>*{min-width:0}
 .card{background:var(--card); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow)}
 .panel{padding:26px 26px 22px}
+#params,.sub-card{transition:opacity .3s,filter .3s}
+.panel.settings-off #params,.panel.settings-off .sub-card{opacity:.5;pointer-events:none;filter:saturate(.5)}
 .panel h2{font-family:'Literata',serif; font-size:22px; margin-bottom:16px}
 .p-row{padding:11px 0; border-bottom:1px dashed var(--line)}
 .p-row:last-child{border-bottom:none}
@@ -91,7 +93,6 @@ select:focus{border-color:var(--accent-2)}
 .btn:active{transform:translateY(0)}
 .btn.primary{background:var(--accent); color:#F7F1E8; border-color:var(--accent); flex:1; min-width:200px; font-size:17px; padding:18px 30px}
 .btn.primary:hover{background:#57392a}
-.btn.ghost{background:transparent}
 .btn.small{padding:11px 20px; font-size:13.5px}
 .btn[disabled]{opacity:.45; pointer-events:none}
 /* result */
@@ -129,6 +130,9 @@ select:focus{border-color:var(--accent-2)}
   .meta-chips .m{font-size:10.5px; padding:4px 10px}
   .out-row select{max-width:55%}
   .res-actions .btn{flex:1; text-align:center}
+  .tip{bottom:auto;top:calc(100% + 10px);left:50%;transform:translate(-50%,-6px);max-width:calc(100vw - 32px)}
+  .tip::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:#3E2A1E}
+  .info-btn:hover+.tip,.info-btn:focus+.tip{transform:translate(-50%,0)}
 }
 </style>
 <base target="_blank">
@@ -153,7 +157,7 @@ select:focus{border-color:var(--accent-2)}
       <div class="src-box">
         <span class="p-label">Источник заданий</span>
         <div class="src-toggle" title="Источник заданий">
-          <label><input type="radio" name="src" value="ai" checked><span>AI с нуля</span></label>
+          <label><input type="radio" name="src" value="ai" checked><span>Ручная настройка</span></label>
           <label><input type="radio" name="src" value="db"><span>Из базы · 100</span></label>
         </div>
       </div>
@@ -233,9 +237,6 @@ select:focus{border-color:var(--accent-2)}
         <button class="btn primary" id="btnGen">Полетели!</button>
         <button class="btn" id="btnSurprise">Сюрприз</button>
       </div>
-      <div class="actions">
-        <button class="btn ghost small hidden" id="btnAgain">↻ Ещё вариант</button>
-      </div>
     </section>
 
     <!-- ЗОНА B -->
@@ -283,6 +284,7 @@ const state={};
 PARAMS.forEach(p=>state[p.key]={mode:"random",value:p.multi?[]:null});
 const $=id=>document.getElementById(id);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const HOLE="Хз, заказчик сказал тебе разобраться";
 const pickIf=(sel,arr)=>sel==="Случайно"?rnd(arr):sel;
 
 /* ==================== UI ПАРАМЕТРОВ ==================== */
@@ -328,15 +330,21 @@ function renderManual(key){
   setStyleTip();
 }
 function setStyleTip(){
+  const btn=$("styleInfo"); if(btn)btn.style.display=lastTZ?"inline-flex":"none";
   const tip=$("styleTip"); if(!tip)return;
   let name=null;
   if(state.style.mode==="manual"&&state.style.value)name=state.style.value;
   else if(lastTZ)name=lastTZ.g.style||lastTZ.r.style;
-  tip.textContent=(name&&STYLE_LIB[name])?STYLE_LIB[name].desc:"Стиль ещё не выбран — нажмите «Полетели!», чтобы узнать, какой стиль выпадет.";
+  tip.textContent=(name&&STYLE_LIB[name])?STYLE_LIB[name].desc:(lastTZ?"Описание этого стиля — загадка. Хз, заказчик сказал тебе разобраться.":"Стиль ещё не выбран — нажмите «Полетели!», чтобы узнать, какой стиль выпадет.");
 }
 renderParams();
 
 /* ==================== АККОРДЕОН ==================== */
+function syncSrcMode(){
+  const db=document.querySelector('input[name=src]:checked').value==="db";
+  document.querySelector(".panel").classList.toggle("settings-off",db);
+}
+document.querySelectorAll('input[name=src"]').forEach(r=>r.addEventListener("change",syncSrcMode));
 document.querySelectorAll(".sub-card .sub-head").forEach(h=>{
   h.addEventListener("click",()=>h.parentElement.classList.toggle("open"));
 });
@@ -425,14 +433,7 @@ function composeAI(r){
   return {title:titles[r.task_type],company,brief:briefByDir[r.direction],identity:idn,db:false};
 }
 function fromDB(r){
-  let pool=TASKS.filter(t=>
-    (state.direction.mode!=="manual"||state.direction.value.includes(t.direction))&&
-    (state.level.mode!=="manual"||state.level.value===t.level)&&
-    (state.task_type.mode!=="manual"||state.task_type.value===t.task_type)&&
-    (state.industry.mode!=="manual"||state.industry.value===t.industry)&&
-    (state.style.mode!=="manual"||state.style.value===t.style));
-  if(!pool.length)pool=TASKS;
-  const t=rnd(pool);
+  const t=rnd(TASKS);
   const company=genName();
   const idn=JSON.parse(JSON.stringify(t.identity));
   ["logo","graphics","fonts"].forEach(k=>{if(idn[k]&&idn[k]!=="—")idn[k]=idn[k].split(t.company).join(company)});
@@ -441,15 +442,29 @@ function fromDB(r){
     direction:t.direction,style:t.style,industry:t.industry,level:t.level,task_type:t.task_type,db:true};
 }
 
+/* ==================== «СЮРПРИЗ»: ТЗ С ДЫРАМИ ==================== */
+function applyHoles(r,g){
+  const tg=[];
+  const add=(o,k)=>{if(o&&k in o)tg.push([o,k])};
+  add(r,"style");add(r,"industry");add(r,"audience");add(r,"device");add(r,"screens");
+  add(r,"elements");add(r,"brand");add(r,"carriers");add(r,"soft");add(r,"model");add(r,"render");
+  add(g,"style");add(g,"industry");add(g,"audience");add(g,"company");
+  add(g.identity,"fonts");add(g.identity,"logo");add(g.identity,"graphics");add(g.identity,"palette");
+  for(let i=tg.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tg[i],tg[j]]=[tg[j],tg[i]];}
+  const keep=Math.max(3,Math.floor(tg.length*(0.2+Math.random()*0.3)));
+  tg.forEach((t,i)=>{if(i>=keep)t[0][t[1]]=HOLE;});
+}
+
 /* ==================== СБОРКА ТЗ ==================== */
 let lastTZ=null;
-function generate(){
+function generate(surprise){
   const r=resolveParams();
   const src=document.querySelector('input[name=src]:checked').value;
   const g = src==="db" ? fromDB(r) : composeAI(r);
-  const style=STYLE_LIB[g.style]||STYLE_LIB[r.style];
+  if(surprise)applyHoles(r,g);
+  const style=STYLE_LIB[g.style]||STYLE_LIB[r.style]||rnd(Object.values(STYLE_LIB));
   const idn=g.identity;
-  const low=v=>String(v).toLowerCase();
+  const low=v=>v===HOLE?v:String(v).toLowerCase();
   const dir=g.direction||r.direction;
   const S=[];
   S.push({h:"Компания",p:`Бренд <b>«${g.company}»</b> — сфера «${low(g.industry||r.industry)}».${g.db?` Задание из базы №${g.dbId}.`:""}`});
@@ -493,10 +508,9 @@ function renderTZ({r,g,S,src}){
   $("placeholder").classList.add("hidden");
   const out=$("tzOut"); out.classList.remove("hidden");
   $("tzActions").classList.remove("hidden");
-  $("btnAgain").classList.remove("hidden");
   out.innerHTML=`
    <div class="meta-chips">
-     <span class="m">${src==="db"?"Источник: база (36 заданий)":"Источник: AI"}</span>
+     <span class="m">${src==="db"?"Источник: база (100 заданий)":"Источник: ручная настройка"}</span>
      <span class="m">${g.direction||r.direction}</span>
      <span class="m">${g.level||r.level}</span>
      <span class="m">${r.task_type}</span>
@@ -505,7 +519,7 @@ function renderTZ({r,g,S,src}){
    </div>
    <div class="tz-title">${g.title}</div>
    ${S.map((s,i)=>`<div class="tz-section"><h4>${i+1}. ${s.h}</h4>${s.p?`<p>${s.p}</p>`:`<ul>${s.list.map(li=>`<li>${li}</li>`).join("")}</ul>`}
-     ${s.h.startsWith("Айдентика")?`<div class="palette">${g.identity.palette.map(c=>`<div class="sw" style="background:${c}"><small>${c}</small></div>`).join("")}</div>`:""}
+     ${s.h.startsWith("Айдентика")?`<div class="palette">${Array.isArray(g.identity.palette)?g.identity.palette.map(c=>`<div class="sw" style="background:${c}"><small>${c}</small></div>`).join(""):`<p style="font-size:13.5px;font-weight:700">${g.identity.palette}</p>`}</div>`:""}
    </div>`).join("")}`;
   $("resultCard").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
@@ -513,7 +527,7 @@ function renderTZ({r,g,S,src}){
 /* ==================== ЭКСПОРТ ==================== */
 function tzPlain(){
   const {r,g,S}=lastTZ;
-  let t=`${g.title.toUpperCase()}\nСгенерировано: ${new Date().toLocaleString("ru-RU")}\nИсточник: ${lastTZ.src==="db"?"база заданий":"AI"}\nНастройки: ${g.direction||r.direction} · ${g.level||r.level} · ${r.task_type} · ${r.format}\n${"—".repeat(46)}\n\n`;
+  let t=`${g.title.toUpperCase()}\nСгенерировано: ${new Date().toLocaleString("ru-RU")}\nИсточник: ${lastTZ.src==="db"?"база заданий":"ручная настройка"}\nНастройки: ${g.direction||r.direction} · ${g.level||r.level} · ${r.task_type} · ${r.format}\n${"—".repeat(46)}\n\n`;
   S.forEach((s,i)=>{t+=`${i+1}. ${s.h}\n`;t+= s.p? s.p.replace(/<[^>]+>/g,"")+"\n\n" : s.list.map(li=>"  • "+li.replace(/<[^>]+>/g,"")).join("\n")+"\n\n";});
   return t;
 }
@@ -545,7 +559,6 @@ function toast(msg){
   clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200);
 }
 $("btnGen").onclick=generate;
-$("btnAgain").onclick=generate;
 $("btnSurprise").onclick=()=>{
   PARAMS.forEach(p=>{state[p.key]={mode:"random",value:p.multi?[]:null};
     const seg=document.querySelector(`.seg[data-key="${p.key}"]`);
@@ -553,7 +566,7 @@ $("btnSurprise").onclick=()=>{
     renderManual(p.key);});
   ["optDevice","optScreens","optCarriers","optSoft","optModel","optRender"].forEach(id=>$(id).selectedIndex=0);
   document.querySelectorAll('#optElements input,#optBrand input').forEach(c=>c.checked=c.value==="Логотип"||c.value==="Палитра"||c.value==="Шрифты");
-  generate();
+  generate(true);
 };
 $("btnRtf").onclick=downloadRTF;
 $("btnCopy").onclick=copyTZ;
