@@ -25,9 +25,9 @@ body::before{
     radial-gradient(60% 40% at 15% 0%, rgba(255,255,255,.55), transparent 70%),
     radial-gradient(50% 35% at 90% 100%, rgba(200,162,122,.18), transparent 70%);
 }
-.hand{position:absolute; z-index:1; pointer-events:none; filter:drop-shadow(0 18px 30px rgba(90,58,40,.18))}
-.hand-left{top:-2vw; left:-3vw; width:34vw; max-width:520px; transform:rotate(4deg)}
-.hand-right{top:-4vw; right:-2vw; width:30vw; max-width:480px; transform:rotate(-6deg)}
+.hand{position:absolute; z-index:3; pointer-events:none; filter:drop-shadow(0 18px 30px rgba(90,58,40,.18))}
+.hand-left{top:5vw; left:-4vw; width:36vw; max-width:580px; transform:rotate(4deg)}
+.hand-right{top:4vw; right:-3vw; width:33vw; max-width:520px; transform:rotate(-6deg)}
 .wrap{position:relative; z-index:2; max-width:1320px; margin:0 auto; padding:34px 28px 80px}
 header{display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; margin-bottom:26px; padding-top:6.5vw}
 .logo{font-family:'Literata',serif; font-weight:700; font-size:clamp(24px,3vw,34px); letter-spacing:-.01em}
@@ -116,7 +116,7 @@ select:focus{border-color:var(--accent-2)}
 @media(max-width:768px){
   .wrap{padding:20px 14px 60px}
   header{padding-top:100px; margin-bottom:18px}
-  .hand-left{width:56vw; max-width:none} .hand-right{width:50vw; max-width:none}
+  .hand-left{top:14vw; width:48vw; max-width:none} .hand-right{top:12vw; width:42vw; max-width:none}
   .panel{padding:20px 16px}
   .result{padding:22px 16px; min-height:0}
   .tz-title{font-size:21px}
@@ -309,8 +309,8 @@ const STYLE_LIB={
 "Глассморфизм":{palette:["#0F172A","#6366F1","#22D3EE","#F8FAFC"],fonts:"Space Grotesk + Inter",graphics:"Полупрозрачные карточки, размытие фона, мягкие градиенты",mood:"воздушность, глубина, современный премиум, мягкий свет"}
 };
 const AUD_TPL=["Молодёжь 18–30 лет, активные пользователи смартфонов","Городские жители 25–45 лет с доходом выше среднего","B2B: специалисты и руководители отделов 30–55 лет","Семьи с детьми 25–50 лет, ценящие простоту и надёжность","Любители нишевых хобби 20–40 лет, ценящие аутентичность"];
-const NAME_A=["Nova","Apex","Lumo","Vero","Kyte","Mira","Onyx","Pavo","Sana","Orbit","Flora","Nord","Craft","Echo","Riff","Talo","Vista","Mono"];
-const NAME_B=["Lab","&Co","haus","loop","ware","stone","nest","works","studio","point","berry","line","field","spot","bay"];
+const NAME_ADJ=["Nova","Pixel","Green","Urban","Digital","Bright","Prime","Eco"];
+const NAME_NOUN=["Tech","Studio","Lab","Hub","Co","Works","Agency"];
 
 /* ==================== СОСТОЯНИЕ ==================== */
 const PARAMS=[
@@ -410,7 +410,7 @@ function aiAudience(r){
   if(["Образование"].includes(r.industry))return "Студенты и молодые специалисты 18–35 лет";
   return rnd(AUD_TPL);
 }
-const genName=()=>rnd(NAME_A)+(Math.random()<.6?rnd(NAME_B):"");
+const genName=()=>rnd(NAME_ADJ)+rnd(NAME_NOUN);
 
 /* ==================== ГЕНЕРАЦИЯ ТЗ ==================== */
 function techBlock(r){
@@ -441,7 +441,7 @@ function criteriaBlock(){
 }
 function buildIdentity(r,company){
   const s=STYLE_LIB[r.style];
-  return {palette:s.palette,fonts:s.fonts,logo:`Знак для «${company}»: абстрактная метафора, связанная с «${r.industry}», в эстетике стиля «${r.style}» (текстовое описание, без генерации изображений)`,graphics:s.graphics};
+  return {palette:s.palette,fonts:s.fonts,logo:`Знак для «${company}»: абстрактная метафора, связанная с «${r.industry.toLowerCase()}», в эстетике стиля «${r.style}» (текстовое описание, без генерации изображений)`,graphics:s.graphics};
 }
 function composeAI(r){
   const company=genName();
@@ -451,13 +451,13 @@ function composeAI(r){
    "Редизайн":`${r.direction}: редизайн для «${company}» (${r.industry})`,
    "Улучшение":`${r.direction}: улучшить существующий продукт «${company}» (${r.industry})`};
   const briefByDir={
-   "UI/UX":`приложение для сферы «${r.industry}»: ${r.screens} экрана, устройство — ${r.device}. Обязательные элементы: ${r.elements.join(", ")}.`,
-   "Вёрстка (HTML/CSS)":`адаптивный сайт для «${r.industry}»: ${r.screens} страниц, блоки — ${r.elements.join(", ")}.`,
-   "Графический дизайн":`серию из 3–5 печатных/digital-макетов (плакаты, постеры или обложки) для «${r.industry}».`,
+   "UI/UX":`приложение для сферы «${r.industry.toLowerCase()}»: ${r.screens} экрана, устройство — ${r.device}. Обязательные элементы: ${r.elements.join(", ")}.`,
+   "Вёрстка (HTML/CSS)":`адаптивный сайт для «${r.industry.toLowerCase()}»: ${r.screens} страниц, блоки — ${r.elements.join(", ")}.`,
+   "Графический дизайн":`серию из 3–5 печатных/digital-макетов (плакаты, постеры или обложки) для «${r.industry.toLowerCase()}».`,
    "Брендинг и айдентика":`айдентику бренда: ${r.brand.join(", ")}. Носители: ${r.carriers}.`,
-   "3D":`3D-модель типа «${r.model}» для «${r.industry}»: софт — ${r.soft}, рендер — ${r.render}.`,
-   "Смешанное":`комплексный проект на стыке UI, графики и брендинга для «${r.industry}».`};
-  return {title:titles[r.task_type],company,desc:`«${company}» — вымышленный бренд из сферы «${r.industry}», обращающийся к ${r.audience}. Задача: ${briefByDir[r.direction]}`,brief:briefByDir[r.direction],identity:idn,db:false};
+   "3D":`3D-модель типа «${r.model}» для «${r.industry.toLowerCase()}»: софт — ${r.soft}, рендер — ${r.render}.`,
+   "Смешанное":`комплексный проект на стыке UI, графики и брендинга для «${r.industry.toLowerCase()}».`};
+  return {title:titles[r.task_type],company,brief:briefByDir[r.direction],identity:idn,db:false};
 }
 function fromDB(r){
   let pool=TASKS.filter(t=>
@@ -468,9 +468,12 @@ function fromDB(r){
     (state.style.mode!=="manual"||state.style.value===t.style));
   if(!pool.length)pool=TASKS;
   const t=rnd(pool);
-  return {title:`${t.direction}: ${t.company} — ${t.brief.split(".")[0]}`,company:t.company,
-    desc:`«${t.company}» — бренд из сферы «${t.industry}». Аудитория: ${t.audience}. Задание из базы №${t.id}.`,
-    brief:t.brief,identity:t.identity,direction:t.direction,style:t.style,industry:t.industry,level:t.level,task_type:t.task_type,db:true};
+  const company=genName();
+  const idn=JSON.parse(JSON.stringify(t.identity));
+  ["logo","graphics","fonts"].forEach(k=>{if(idn[k]&&idn[k]!=="—")idn[k]=idn[k].split(t.company).join(company)});
+  return {title:`${t.direction}: ${company} — ${t.brief.split(".")[0]}`,company,
+    brief:t.brief.split(t.company).join(company),identity:idn,dbId:t.id,audience:t.audience,
+    direction:t.direction,style:t.style,industry:t.industry,level:t.level,task_type:t.task_type,db:true};
 }
 
 /* ==================== СБОРКА ТЗ ==================== */
@@ -481,10 +484,31 @@ function generate(){
   const g = src==="db" ? fromDB(r) : composeAI(r);
   const style=STYLE_LIB[g.style]||STYLE_LIB[r.style];
   const idn=g.identity;
+  const low=v=>String(v).toLowerCase();
+  const dir=g.direction||r.direction;
   const S=[];
-  S.push({h:"Компания",p:`<b>«${g.company}»</b> — ${g.desc}`});
-  S.push({h:"Цель задания",p:`${r.task_type}: ${g.brief} Уровень сложности: ${g.level||r.level}. Формат сдачи: ${r.format}.`});
-  S.push({h:"Целевая аудитория",p:g.audience||(r.audience)});
+  S.push({h:"Компания",p:`Бренд <b>«${g.company}»</b> — сфера «${low(g.industry||r.industry)}».${g.db?` Задание из базы №${g.dbId}.`:""}`});
+  const paramsList=[
+    `Бренд: «${g.company}»`,
+    `Сфера: ${low(g.industry||r.industry)}`,
+    `Направление: ${dir}`,
+    `Тип задачи: ${low(r.task_type)}`,
+    `Уровень сложности: ${low(g.level||r.level)}`,
+    `Формат сдачи: ${low(r.format)}`,
+    `Стиль: ${low(g.style||r.style)}`,
+    `Аудитория: ${low(g.audience||r.audience)}`
+  ];
+  if(dir==="UI/UX"||dir==="Вёрстка (HTML/CSS)"){
+    paramsList.push(`Устройство: ${low(r.device)}`,`Экранов/страниц: ${r.screens}`,`Обязательные элементы: ${low(r.elements.join(", "))}`);
+  }
+  if(dir==="Брендинг и айдентика"){
+    paramsList.push(`Носители: ${low(r.carriers)}`,`Включить: ${low(r.brand.join(", "))}`);
+  }
+  if(dir==="3D"){
+    paramsList.push(`Софт: ${r.soft}`,`Тип модели: ${low(r.model)}`,`Рендер: ${low(r.render)}`);
+  }
+  S.push({h:"Параметры задания",list:paramsList});
+  S.push({h:"Цель задания",p:`${r.task_type}: ${g.brief}`});
   if(r.mood)S.push({h:"Стиль и мудборд",p:`Стиль — «${g.style||r.style}». Настроение: ${style.mood}. Ключевые слова для мудборда: ${r.industry.toLowerCase()}, ${(g.style||r.style).toLowerCase()}, ${style.graphics.split(",")[0].toLowerCase()}.`});
   else S.push({h:"Стиль",p:`Стиль — «${g.style||r.style}».`});
   S.push({h:"Айдентика (текстовое описание)",p:`Палитра: ${idn.palette.join(", ")}.<br>Шрифтовая пара: ${idn.fonts}.<br>Логотип: ${idn.logo}.<br>Графические элементы: ${idn.graphics}.`});
