@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДизайнБриф — генератор заданий по дизайну</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EFE9DF; --ink:#5A3A28; --ink-soft:rgba(90,58,40,.62);
+  --card:rgba(255,255,255,.58); --card-solid:#FBF8F2;
+  --line:rgba(90,58,40,.14); --accent:#6B4632; --accent-2:#8A5A3B;
+  --r:34px; --shadow:0 18px 50px rgba(90,58,40,.13);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Manrope',sans-serif; background:var(--bg); color:var(--ink);
+  min-height:100vh; overflow-x:hidden; position:relative;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(60% 40% at 15% 0%, rgba(255,255,255,.55), transparent 70%),
+    radial-gradient(50% 35% at 90% 100%, rgba(200,162,122,.18), transparent 70%);
+}
+.hand{position:absolute; z-index:1; pointer-events:none; filter:drop-shadow(0 18px 30px rgba(90,58,40,.18))}
+.hand-left{top:-2vw; left:-3vw; width:34vw; max-width:520px; transform:rotate(4deg)}
+.hand-right{top:-4vw; right:-2vw; width:30vw; max-width:480px; transform:rotate(-6deg)}
+.wrap{position:relative; z-index:2; max-width:1320px; margin:0 auto; padding:34px 28px 80px}
+header{display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; margin-bottom:26px; padding-top:6.5vw}
+.logo{font-family:'Literata',serif; font-weight:700; font-size:clamp(24px,3vw,34px); letter-spacing:-.01em}
+.logo span{color:var(--accent-2)}
+.tagline{color:var(--ink-soft); font-size:14px; margin-top:2px}
+.grid{display:grid; grid-template-columns:minmax(380px,470px) 1fr; gap:26px; align-items:start}
+.grid>*{min-width:0}
+.card{background:var(--card); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow)}
+.panel{padding:26px 26px 22px}
+.panel h2{font-family:'Literata',serif; font-size:22px; margin-bottom:16px}
+.p-row{padding:11px 0; border-bottom:1px dashed var(--line)}
+.p-row:last-child{border-bottom:none}
+.p-head{display:flex; flex-direction:column; align-items:flex-start; gap:8px}
+.p-label{font-weight:700; font-size:14.5px}
+.seg{display:flex; background:rgba(255,255,255,.5); border:1px solid var(--line); border-radius:999px; padding:3px; gap:2px; flex-wrap:wrap}
+.seg button{border:none; background:transparent; font-family:inherit; font-size:11.5px; font-weight:700; color:var(--ink-soft); padding:6px 11px; border-radius:999px; cursor:pointer; transition:.2s; white-space:nowrap}
+.seg button.on{background:var(--accent); color:#F7F1E8}
+.manual-box{margin-top:9px; display:none}
+.manual-box.open{display:block}
+select, input[type=text]{
+  width:100%; font-family:inherit; font-size:13.5px; color:var(--ink); font-weight:600;
+  background:rgba(255,255,255,.75); border:1px solid var(--line); border-radius:16px; padding:10px 13px; outline:none;
+}
+select:focus{border-color:var(--accent-2)}
+.chips{display:flex; flex-wrap:wrap; gap:7px}
+.chip{font-family:inherit; font-size:12.5px; font-weight:700; color:var(--ink-soft); background:rgba(255,255,255,.6); border:1px solid var(--line); border-radius:999px; padding:7px 13px; cursor:pointer; transition:.2s}
+.chip.on{background:var(--accent); color:#F7F1E8; border-color:var(--accent)}
+.sub-card{margin-top:14px; border-radius:22px; background:rgba(255,255,255,.4); border:1px solid var(--line); overflow:hidden}
+.sub-head{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:15px 18px; background:transparent; border:none; cursor:pointer; font-family:'Literata',serif; font-size:16px; font-weight:700; color:var(--ink); text-align:left}
+.sub-head .chev{flex:none; width:20px; height:20px; transition:transform .3s; opacity:.6}
+.sub-card.open .sub-head .chev{transform:rotate(180deg)}
+.sub-body{max-height:0; overflow:hidden; transition:max-height .35s ease}
+.sub-card.open .sub-body{max-height:700px}
+.sub-inner{padding:2px 18px 16px}
+.sub-inner h3{font-family:'Literata',serif; font-size:16px; margin-bottom:10px}
+.sub-inner .p-label{font-size:13px; font-weight:600}
+.checks{display:flex; flex-wrap:wrap; gap:7px; margin-top:8px}
+.checks label{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; background:rgba(255,255,255,.6); border:1px solid var(--line); border-radius:999px; padding:6px 12px; cursor:pointer}
+.checks input{accent-color:var(--accent)}
+.out-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0}
+.out-row .p-label{font-weight:600; font-size:13.5px}
+.out-row select{width:auto; min-width:130px; max-width:60%}
+.src-box{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:4px 0 12px; flex-wrap:wrap}
+.src-toggle{display:flex; background:rgba(255,255,255,.5); border:1px solid var(--line); border-radius:999px; padding:5px}
+.src-toggle label{position:relative}
+.src-toggle input{position:absolute; opacity:0}
+.src-toggle span{display:block; padding:9px 18px; border-radius:999px; font-weight:700; font-size:13px; cursor:pointer; color:var(--ink-soft); transition:.25s}
+.src-toggle input:checked+span{background:var(--accent); color:#F7F1E8; box-shadow:0 8px 18px rgba(107,70,50,.35)}
+.actions{display:flex; gap:12px; margin-top:20px; flex-wrap:wrap}
+.btn{
+  font-family:inherit; font-weight:800; font-size:15px; color:var(--ink); cursor:pointer;
+  background:rgba(255,255,255,.65); border:1px solid var(--line); border-radius:999px;
+  padding:15px 28px; transition:.25s; box-shadow:0 10px 24px rgba(90,58,40,.10);
+}
+.btn:hover{transform:translateY(-2px); box-shadow:0 16px 32px rgba(90,58,40,.18)}
+.btn:active{transform:translateY(0)}
+.btn.primary{background:var(--accent); color:#F7F1E8; border-color:var(--accent); flex:1; min-width:200px; font-size:17px; padding:18px 30px}
+.btn.primary:hover{background:#57392a}
+.btn.ghost{background:transparent}
+.btn.small{padding:11px 20px; font-size:13.5px}
+.btn[disabled]{opacity:.45; pointer-events:none}
+/* result */
+.result{padding:30px 32px; min-height:520px; display:flex; flex-direction:column; width:100%; max-width:100%}
+.placeholder{margin:auto; text-align:center; color:var(--ink-soft); max-width:340px}
+.placeholder .big{font-family:'Literata',serif; font-size:26px; color:var(--ink); margin-bottom:10px}
+.meta-chips{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px}
+.meta-chips .m{font-size:11.5px; font-weight:700; color:var(--accent); background:rgba(107,70,50,.09); border-radius:999px; padding:5px 12px}
+.tz-title{font-family:'Literata',serif; font-size:clamp(22px,2.4vw,30px); line-height:1.25; margin-bottom:18px; overflow-wrap:break-word}
+.tz-section{margin-bottom:16px; overflow-wrap:break-word; word-wrap:break-word}
+.tz-section h4{font-family:'Literata',serif; font-size:17px; color:var(--accent); margin-bottom:6px}
+.tz-section p, .tz-section li{font-size:14.5px; line-height:1.65; color:var(--ink); overflow-wrap:break-word}
+.tz-section ul{padding-left:20px}
+.tz-section a{color:var(--accent-2); word-break:break-all}
+.palette{display:flex; gap:8px; margin:8px 0; flex-wrap:wrap}
+.sw{width:44px; height:30px; border-radius:10px; border:1px solid var(--line)}
+.sw small{display:block; font-size:9px; text-align:center; margin-top:3px; color:var(--ink-soft)}
+.res-actions{display:flex; gap:10px; margin-top:auto; padding-top:20px; flex-wrap:wrap}
+.toast{position:fixed; bottom:26px; left:50%; transform:translate(-50%,80px); background:var(--accent); color:#F7F1E8; font-weight:700; font-size:14px; padding:13px 26px; border-radius:999px; box-shadow:0 14px 34px rgba(90,58,40,.35); transition:.35s; z-index:50; opacity:0}
+.toast.show{transform:translate(-50%,0); opacity:1}
+.hidden{display:none!important}
+@media(max-width:980px){
+  .grid{grid-template-columns:1fr}
+  header{padding-top:120px}
+  .hand-left{width:46vw} .hand-right{width:42vw}
+}
+@media(max-width:768px){
+  .wrap{padding:20px 14px 60px}
+  header{padding-top:100px; margin-bottom:18px}
+  .hand-left{width:56vw; max-width:none} .hand-right{width:50vw; max-width:none}
+  .panel{padding:20px 16px}
+  .result{padding:22px 16px; min-height:0}
+  .tz-title{font-size:21px}
+  .tz-section p, .tz-section li{font-size:14px}
+  .meta-chips .m{font-size:10.5px; padding:4px 10px}
+  .out-row select{max-width:55%}
+  .res-actions .btn{flex:1; text-align:center}
+}
+</style>
+<base target="_blank">
+</head>
+<body>
+<img class="hand hand-left" src="assets/hand_left.png" alt="">
+<img class="hand hand-right" src="assets/hand_right.png" alt="">
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="logo">Дизайн<span>Бриф</span></div>
+      <div class="tagline">Генератор заданий по дизайну — настрой, нажми «Полетели!» и получи ТЗ</div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- ЗОНА A -->
+    <section class="card panel">
+      <h2>Настройки генерации</h2>
+
+      <div class="src-box">
+        <span class="p-label">Источник заданий</span>
+        <div class="src-toggle" title="Источник заданий">
+          <label><input type="radio" name="src" value="ai" checked><span>AI с нуля</span></label>
+          <label><input type="radio" name="src" value="db"><span>Из базы · 36</span></label>
+        </div>
+      </div>
+
+      <div id="params"></div>
+
+      <div class="sub-card" id="uiSub">
+        <button class="sub-head" type="button">Для UI/UX и вёрстки
+          <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#5A3A28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="sub-body"><div class="sub-inner">
+          <div class="out-row"><span class="p-label">Тип устройства</span>
+            <select id="optDevice"><option>Случайно</option><option>Desktop</option><option>Mobile</option><option>Адаптив</option></select></div>
+          <div class="out-row"><span class="p-label">Экранов/страниц</span>
+            <select id="optScreens"><option>Случайно</option><option>1</option><option>3–5</option><option>5+</option></select></div>
+          <div class="p-label" style="margin-top:6px">Обязательные элементы</div>
+          <div class="checks" id="optElements">
+            <label><input type="checkbox" value="Навигация">Навигация</label>
+            <label><input type="checkbox" value="Футер">Футер</label>
+            <label><input type="checkbox" value="Формы">Формы</label>
+            <label><input type="checkbox" value="Карточки">Карточки</label>
+            <label><input type="checkbox" value="Модальные окна">Модальные окна</label>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="sub-card" id="brandSub">
+        <button class="sub-head" type="button">Для брендинга
+          <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#5A3A28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="sub-body"><div class="sub-inner">
+          <div class="p-label">Что включить</div>
+          <div class="checks" id="optBrand">
+            <label><input type="checkbox" value="Логотип" checked>Логотип</label>
+            <label><input type="checkbox" value="Палитра" checked>Палитра</label>
+            <label><input type="checkbox" value="Шрифты" checked>Шрифты</label>
+            <label><input type="checkbox" value="Визитка">Визитка</label>
+            <label><input type="checkbox" value="Упаковка">Упаковка</label>
+            <label><input type="checkbox" value="Брендбук">Брендбук</label>
+          </div>
+          <div class="out-row" style="margin-top:10px"><span class="p-label">Носители</span>
+            <select id="optCarriers"><option>Случайно</option><option>Цифровые</option><option>Печатные</option><option>Смешанные</option></select></div>
+        </div></div>
+      </div>
+
+      <div class="sub-card" id="d3Sub">
+        <button class="sub-head" type="button">Для 3D
+          <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#5A3A28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="sub-body"><div class="sub-inner">
+          <div class="out-row"><span class="p-label">Софт</span>
+            <select id="optSoft"><option>Случайно</option><option>Blender</option><option>Cinema 4D</option><option>Maya</option><option>Spline</option><option>Tinkercad</option></select></div>
+          <div class="out-row"><span class="p-label">Тип модели</span>
+            <select id="optModel"><option>Случайно</option><option>Предмет</option><option>Персонаж</option><option>Сцена</option><option>Иконка</option><option>Упаковка</option></select></div>
+          <div class="out-row"><span class="p-label">Стиль рендера</span>
+            <select id="optRender"><option>Случайно</option><option>Реалистичный</option><option>Стилизованный</option><option>Low-poly</option><option>Clay</option></select></div>
+        </div></div>
+      </div>
+
+      <div class="sub-card">
+        <button class="sub-head" type="button">Настройки вывода
+          <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#5A3A28" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="sub-body"><div class="sub-inner">
+          <div class="out-row"><span class="p-label">Объём ТЗ</span>
+            <select id="optVolume"><option>Подробное ТЗ</option><option>Краткий бриф</option></select></div>
+          <div class="out-row"><span class="p-label">Референсы (ссылки)</span>
+            <select id="optRefs"><option>Да</option><option>Нет</option></select></div>
+          <div class="out-row"><span class="p-label">Критерии оценки</span>
+            <select id="optCrit"><option>Да</option><option>Нет</option></select></div>
+          <div class="out-row"><span class="p-label">Мудборд (настроение)</span>
+            <select id="optMood"><option>Да</option><option>Нет</option></select></div>
+        </div></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="btnGen">Полетели!</button>
+        <button class="btn" id="btnSurprise">Сюрприз</button>
+      </div>
+      <div class="actions">
+        <button class="btn ghost small hidden" id="btnAgain">↻ Ещё вариант</button>
+      </div>
+    </section>
+
+    <!-- ЗОНА B -->
+    <section class="card result" id="resultCard">
+      <div class="placeholder" id="placeholder">
+        <div class="big">Здесь появится задание</div>
+        <p>Настрой параметры слева или просто нажми «Полетели!» / «Сюрприз» — и получи готовое ТЗ по дизайну.</p>
+      </div>
+      <div id="tzOut" class="hidden"></div>
+      <div class="res-actions hidden" id="tzActions">
+        <button class="btn small" id="btnRtf">⬇ Скачать .rtf</button>
+        <button class="btn small" id="btnCopy">⧉ Скопировать в буфер</button>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================== БАЗА ЗАДАНИЙ (36) ==================== */
+const TASKS = [
+{id:1,direction:"UI/UX",level:"Новичок",task_type:"Создание с нуля",industry:"Еда",company:"Bean & Byte",style:"Минимализм",audience:"Городские жители 20–35 лет, любят кофе и технологии",identity:{palette:["#2E2A26","#C8A27A","#F5F1EA","#8B6F47"],fonts:"Inter + Playfair Display",logo:"Монограмма из букв B и B, стилизованная под кофейное зерно",graphics:"Тонкие линейные иконки, много воздуха, крупные фото"},brief:"Мобильное приложение для заказа кофе с самовывозом. 3 экрана: выбор напитка, корзина, карта кофеен."},
+{id:2,direction:"UI/UX",level:"Средний",task_type:"Редизайн",industry:"Медицина",company:"MedCare+",style:"Скандинавский",audience:"Взрослые 30–55 лет, заботящиеся о здоровье",identity:{palette:["#0A6E7C","#E8F4F5","#FFFFFF","#FF7A59"],fonts:"Manrope + Source Serif",logo:"Крест, вписанный в круг, с плавными линиями",graphics:"Мягкие формы, иллюстрации врачей, спокойные цвета"},brief:"Редизайн личного кабинета пациента: запись к врачу, история приёмов, результаты анализов. 5 экранов."},
+{id:3,direction:"UI/UX",level:"Продвинутый",task_type:"Создание с нуля",industry:"Финансы",company:"Nordic Pay",style:"Глассморфизм",audience:"B2C, молодые специалисты 25–40 лет",identity:{palette:["#1A1F36","#6C5CE7","#00D2A8","#F5F7FA"],fonts:"Space Grotesk + Inter",logo:"Абстрактная стрелка вверх внутри щита",graphics:"Полупрозрачные карточки, размытие фона, градиенты"},brief:"Финтех-приложение с дашбордом: баланс, транзакции, аналитика расходов, инвестиции. 6+ экранов, адаптив."},
+{id:4,direction:"UI/UX",level:"Средний",task_type:"Улучшение",industry:"Образование",company:"LinguaFlow",style:"Органика",audience:"Школьники и студенты 14–25 лет",identity:{palette:["#7BC950","#FFF6E5","#2B3A42","#F4A261"],fonts:"Nunito + Comfortaa",logo:"Речевой пузырь в форме листа",graphics:"Скруглённые формы, рукописные акценты, яркие иллюстрации"},brief:"Улучшить онбординг в приложении для изучения языков: сократить шаги, добавить геймификацию, повысить вовлечённость."},
+{id:5,direction:"UI/UX",level:"Новичок",task_type:"Создание с нуля",industry:"Путешествия",company:"Nomad Go",style:"Футуризм",audience:"Молодые путешественники 22–35 лет",identity:{palette:["#0B0C10","#45A29E","#66FCF1","#C5C6C7"],fonts:"Orbitron + Roboto",logo:"Компас с неоновыми линиями",graphics:"Тёмная тема, неоновые акценты, карты и линии маршрутов"},brief:"Мобильное приложение для планирования маршрутов путешествий. 4 экрана: карта, план, бюджет, заметки."},
+{id:6,direction:"UI/UX",level:"Продвинутый",task_type:"Редизайн",industry:"Технологии",company:"CloudNest",style:"Брутализм",audience:"B2B, IT-специалисты, разработчики",identity:{palette:["#000000","#FFFFFF","#FF3B30","#F5F500"],fonts:"JetBrains Mono + Archivo Black",logo:"Жирный текст в рамке",graphics:"Резкие контуры, крупные шрифты, контрастные блоки"},brief:"Редизайн дашборда облачного хранилища: файлы, папки, аналитика использования, настройки доступа."},
+{id:7,direction:"Графический дизайн",level:"Новичок",task_type:"Создание с нуля",industry:"Искусство",company:"ArtHouse 21",style:"Ар-деко",audience:"Любители искусства 25–55 лет",identity:{palette:["#1B1B1B","#D4AF37","#F5E6C8","#7B2D26"],fonts:"Cinzel + Lato",logo:"Геометрическая рамка с буквой A",graphics:"Золотые линии, симметрия, орнаменты"},brief:"Серия из 3 плакатов для выставки современного искусства в стиле ар-деко. Единый визуальный язык."},
+{id:8,direction:"Графический дизайн",level:"Средний",task_type:"Создание с нуля",industry:"Экология",company:"Green Wave",style:"Органика",audience:"Активисты и экологически сознательные люди 20–45 лет",identity:{palette:["#2D6A4F","#95D5B2","#F1FAEE","#E76F51"],fonts:"Poppins + Merriweather",logo:"Волна, переходящая в лист",graphics:"Плавные линии, природные текстуры, рукописные элементы"},brief:"Серия инфографических плакатов о переработке отходов. 4 плаката в едином стиле."},
+{id:9,direction:"Графический дизайн",level:"Продвинутый",task_type:"Создание с нуля",industry:"Мода",company:"NOIR",style:"Минимализм",audience:"Женщины 25–45 лет, ценящие премиум-сегмент",identity:{palette:["#0A0A0A","#FFFFFF","#B8B8B8","#8B0000"],fonts:"Bodoni Moda + Helvetica Neue",logo:"Тонкий серифный текст NOIR",graphics:"Много белого пространства, крупные фото, тонкие линии"},brief:"Серия рекламных постеров для новой коллекции одежды. 5 постеров: единый стиль, разные акценты."},
+{id:10,direction:"Графический дизайн",level:"Средний",task_type:"Создание с нуля",industry:"Спорт",company:"PeakForm",style:"Гранж",audience:"Мужчины и женщины 18–35 лет, спортзал",identity:{palette:["#1A1A1A","#FF4500","#F0F0F0","#4A4A4A"],fonts:"Bebas Neue + Roboto Condensed",logo:"Стилизованная гора с разрывом",graphics:"Текстуры, брызги, рваные края, динамика"},brief:"Серия постеров для фитнес-клуба. 4 постера с разными упражнениями, единый агрессивный стиль."},
+{id:11,direction:"Графический дизайн",level:"Новичок",task_type:"Создание с нуля",industry:"Еда",company:"Sweet Lab",style:"Ретро",audience:"Семьи, дети и взрослые 25–50 лет",identity:{palette:["#F4A261","#E76F51","#FFF3E0","#2A9D8F"],fonts:"Lobster + Open Sans",logo:"Винтажный крендель в круге",graphics:"Ретро-этикетки, штриховки, тёплые цвета"},brief:"Разработать этикетку для домашней выпечки. Учесть, что будет печать на прозрачной плёнке."},
+{id:12,direction:"Графический дизайн",level:"Продвинутый",task_type:"Создание с нуля",industry:"Технологии",company:"Quantum",style:"Футуризм",audience:"B2B, технологические компании",identity:{palette:["#0A0E27","#00F5D4","#FEE440","#FFFFFF"],fonts:"Chakra Petch + Inter",logo:"Атом с орбитами в движении",graphics:"Сетки, градиенты, глитч-эффекты"},brief:"Серия постеров для IT-конференции. 3 постера: главный, спикеры, расписание. Единый футуристичный стиль."},
+{id:13,direction:"Брендинг и айдентика",level:"Новичок",task_type:"Создание с нуля",industry:"Еда",company:"Bread & Co",style:"Скандинавский",audience:"Городские жители 25–50 лет",identity:{palette:["#F5EFE6","#8B5E3C","#4A4A4A","#D4A373"],fonts:"Fraunces + Karla",logo:"Хлеб с надрезом, минималистичный",graphics:"Тёплые текстуры, простые формы, естественные цвета"},brief:"Разработать айдентику для пекарни: логотип, палитра, шрифты, визитка, упаковка хлеба."},
+{id:14,direction:"Брендинг и айдентика",level:"Средний",task_type:"Создание с нуля",industry:"Медицина",company:"VitaLab",style:"Минимализм",audience:"B2B, лаборатории и клиники",identity:{palette:["#FFFFFF","#0066CC","#E6F2FF","#1A1A1A"],fonts:"IBM Plex Sans + IBM Plex Serif",logo:"Капля в шестиугольнике",graphics:"Чистые линии, лабораторная эстетика, точность"},brief:"Разработать айдентику для сети медицинских лабораторий: логотип, брендбук, оформление документов, вывески."},
+{id:15,direction:"Брендинг и айдентика",level:"Продвинутый",task_type:"Создание с нуля",industry:"Мода",company:"ATELIER 9",style:"Ар-деко",audience:"Премиум-сегмент, женщины 30–55 лет",identity:{palette:["#1A1A1A","#C9A227","#F7F3E8","#4A1E1E"],fonts:"Cormorant Garamond + Montserrat",logo:"Монограмма A9 с геометрическими элементами",graphics:"Золото, симметрия, упаковка премиум-класса"},brief:"Разработать брендинг для дома моды: логотип, палитра, шрифты, упаковка, визитки, брендбук на 20+ страниц."},
+{id:16,direction:"Брендинг и айдентика",level:"Средний",task_type:"Редизайн",industry:"Экология",company:"EcoRoot",style:"Органика",audience:"B2C, семьи с детьми",identity:{palette:["#3A5A40","#A3B18A","#DAD7CD","#BC6C25"],fonts:"Fraunces + Inter",logo:"Корень, переходящий в дерево",graphics:"Природные формы, рукописные шрифты, крафтовая бумага"},brief:"Редизайн айдентики эко-бренда бытовой химии. Обновить логотип, палитру, упаковку, сохранить узнаваемость."},
+{id:17,direction:"Брендинг и айдентика",level:"Новичок",task_type:"Создание с нуля",industry:"Спорт",company:"PulseGym",style:"Брутализм",audience:"Молодёжь 18–30 лет",identity:{palette:["#000000","#FF0000","#FFFFFF","#333333"],fonts:"Archivo Black + Roboto",logo:"Пульс в квадрате",graphics:"Жирные линии, контраст, агрессивная типографика"},brief:"Разработать айдентику для сети тренажёрных залов: логотип, палитра, шрифты, форма сотрудников, вывески."},
+{id:18,direction:"Брендинг и айдентика",level:"Продвинутый",task_type:"Создание с нуля",industry:"Финансы",company:"Aurum Capital",style:"Минимализм",audience:"B2B и B2C, инвесторы 35–60 лет",identity:{palette:["#0D1B2A","#C9A227","#F5F5F5","#3E5C76"],fonts:"Playfair Display + Inter",logo:"Монограмма AC с золотой линией",graphics:"Премиум, сдержанность, золото на тёмном"},brief:"Разработать брендинг для инвестиционной компании: логотип, палитра, шрифты, брендбук, деловая документация."},
+{id:19,direction:"Вёрстка (HTML/CSS)",level:"Новичок",task_type:"Создание с нуля",industry:"Еда",company:"Pizza Nova",style:"Ретро",audience:"Молодёжь и семьи 18–45 лет",identity:{palette:["#D62828","#F77F00","#FCBF49","#FFFFFF"],fonts:"Lobster + Open Sans",logo:"Пицца-слайс в круге",graphics:"Ретро-иллюстрации, тёплые цвета, рукописные акценты"},brief:"Сверстать одностраничный лендинг пиццерии: hero, меню, доставка, контакты. Адаптив, семантическая разметка."},
+{id:20,direction:"Вёрстка (HTML/CSS)",level:"Средний",task_type:"Создание с нуля",industry:"Технологии",company:"DevHub",style:"Глассморфизм",audience:"Разработчики 20–40 лет",identity:{palette:["#0F172A","#6366F1","#22D3EE","#F8FAFC"],fonts:"Space Grotesk + Inter",logo:"Тег кода в круге",graphics:"Тёмная тема, размытие, градиенты"},brief:"Сверстать страницу продукта для IT-стартапа: hero, фичи, тарифы, CTA, футер. Адаптив, доступность, анимации."},
+{id:21,direction:"Вёрстка (HTML/CSS)",level:"Продвинутый",task_type:"Создание с нуля",industry:"Искусство",company:"Museum 21",style:"Брутализм",audience:"Любители искусства и туристы 20–60 лет",identity:{palette:["#FFFFFF","#000000","#FF0000","#F5F500"],fonts:"Archivo Black + JetBrains Mono",logo:"Крупная буква M в рамке",graphics:"Сетка, контраст, крупная типографика, без декора"},brief:"Сверстать сайт музея современного искусства: афиша, выставки, билеты, о музее. Сложная сетка, анимации, адаптив."},
+{id:22,direction:"Вёрстка (HTML/CSS)",level:"Новичок",task_type:"Создание с нуля",industry:"Экология",company:"GreenStep",style:"Органика",audience:"Эко-активисты 20–45 лет",identity:{palette:["#2D6A4F","#95D5B2","#F1FAEE","#1B4332"],fonts:"Poppins + Merriweather",logo:"След ноги, превращающийся в лист",graphics:"Мягкие формы, природа, зелёные оттенки"},brief:"Сверстать лендинг НКО о сокращении углеродного следа: проблема, решения, статистика, призыв к действию."},
+{id:23,direction:"Вёрстка (HTML/CSS)",level:"Средний",task_type:"Улучшение",industry:"Образование",company:"EduSphere",style:"Минимализм",audience:"Студенты и преподаватели 18–40 лет",identity:{palette:["#FFFFFF","#2563EB","#F1F5F9","#0F172A"],fonts:"Inter + Merriweather",logo:"Сфера с орбитой",graphics:"Чистые линии, много воздуха, акцент на контенте"},brief:"Улучшить вёрстку образовательной платформы: исправить сетку, отступы, адаптив, повысить доступность (a11y)."},
+{id:24,direction:"Вёрстка (HTML/CSS)",level:"Продвинутый",task_type:"Создание с нуля",industry:"Финансы",company:"Ledger",style:"Минимализм",audience:"B2B, бухгалтеры и финансисты",identity:{palette:["#0A0A0A","#00C48C","#FFFFFF","#F5F5F5"],fonts:"IBM Plex Sans + IBM Plex Mono",logo:"Стопка монет с линией графика",graphics:"Строгая сетка, таблицы, аккуратная типографика"},brief:"Сверстать дашборд бухгалтерии: таблицы, графики, фильтры, экспорт. Сложная сетка, интерактив, адаптив."},
+{id:25,direction:"3D",level:"Новичок",task_type:"Создание с нуля",industry:"Еда",company:"CupStory",style:"Минимализм",audience:"Универсальная",identity:{palette:["#F5F1EA","#C8A27A","#2E2A26","#8B6F47"],fonts:"—",logo:"—",graphics:"Мягкий свет, реалистичные материалы"},brief:"Смоделировать керамическую кружку с логотипом. Blender, реалистичный рендер, 3 ракурса, студийный свет."},
+{id:26,direction:"3D",level:"Средний",task_type:"Создание с нуля",industry:"Технологии",company:"GadgetWorks",style:"Стилизованный",audience:"B2C, покупатели гаджетов 20–45 лет",identity:{palette:["#1A1A1A","#00D2A8","#FFFFFF","#4A4A4A"],fonts:"—",logo:"—",graphics:"Clean-рендер, отражения, студийный фон"},brief:"Смоделировать беспроводные наушники с кейсом. Blender, реалистичные материалы, 5 ракурсов, рендер 2K."},
+{id:27,direction:"3D",level:"Продвинутый",task_type:"Создание с нуля",industry:"Искусство",company:"IsoWorld",style:"Low-poly",audience:"Любители игр и анимации",identity:{palette:["#F4A261","#2A9D8F","#E9C46A","#264653"],fonts:"—",logo:"—",graphics:"Изометрия, low-poly, мягкий свет"},brief:"Создать изометрическую сцену: рабочий стол программиста. Blender, low-poly стиль, 3D-модели, материалы, рендер."},
+{id:28,direction:"3D",level:"Средний",task_type:"Создание с нуля",industry:"Мода",company:"Sole",style:"Реалистичный",audience:"Покупатели кроссовок 18–40 лет",identity:{palette:["#FFFFFF","#000000","#FF3B30","#B8B8B8"],fonts:"—",logo:"—",graphics:"Студийный свет, реалистичные текстуры"},brief:"Смоделировать кроссовок с реалистичными материалами (кожа, сетка, резина). Blender, 4 ракурса, рендер 4K."},
+{id:29,direction:"3D",level:"Новичок",task_type:"Создание с нуля",industry:"Искусство",company:"IconForge",style:"Стилизованный",audience:"UI-дизайнеры",identity:{palette:["#6C5CE7","#A29BFE","#FFFFFF","#2D3436"],fonts:"—",logo:"—",graphics:"Глянец, мягкие тени, яркие цвета"},brief:"Создать 3D-иконку для приложения заметок. Blender, стилизованный рендер, 3 ракурса, PNG с прозрачностью."},
+{id:30,direction:"3D",level:"Продвинутый",task_type:"Создание с нуля",industry:"Еда",company:"PackLab",style:"Реалистичный",audience:"B2B, производители продуктов",identity:{palette:["#F5EFE6","#8B5E3C","#D4A373","#2D6A4F"],fonts:"—",logo:"—",graphics:"Реалистичные материалы, студийный свет, отражения"},brief:"Смоделировать и текстурировать упаковку для чая (коробка + банка). Blender, 3 ракурса, рендер 4K."},
+{id:31,direction:"Смешанное",level:"Средний",task_type:"Создание с нуля",industry:"Искусство",company:"DigiMuseum",style:"Футуризм",audience:"Любители искусства и технологий 20–50 лет",identity:{palette:["#0A0E27","#00F5D4","#FEE440","#FFFFFF"],fonts:"Chakra Petch + Inter",logo:"Цифровая сфера с орбитой",graphics:"Неон, глитч, 3D-объекты"},brief:"Концепция цифрового музея: UI-прототип + 3D-экспонаты + айдентика. Смешанное задание на стыке UI, 3D и брендинга."},
+{id:32,direction:"Смешанное",level:"Продвинутый",task_type:"Создание с нуля",industry:"Технологии",company:"ARgo",style:"Футуризм",audience:"B2C, пользователи соцсетей 16–30 лет",identity:{palette:["#1A1F36","#6C5CE7","#00D2A8","#F5F7FA"],fonts:"Space Grotesk + Inter",logo:"Стилизованная буква A с 3D-эффектом",graphics:"Неон, градиенты, 3D-объекты"},brief:"Разработать AR-фильтр для соцсетей: 3D-модель + UI-элементы + айдентика. Blender + Figma + брендинг."},
+{id:33,direction:"Смешанное",level:"Средний",task_type:"Создание с нуля",industry:"Мода",company:"Threads",style:"Минимализм",audience:"Молодёжь 18–35 лет",identity:{palette:["#FFFFFF","#000000","#B8B8B8","#8B0000"],fonts:"Inter + Bodoni Moda",logo:"Тонкая линия нити",graphics:"Минимализм, крупные фото, тонкие линии"},brief:"Разработать бренд одежды: айдентика + 3D-визуализация коллекции + UI для интернет-магазина."},
+{id:34,direction:"Смешанное",level:"Новичок",task_type:"Создание с нуля",industry:"Образование",company:"BrainSpark",style:"Органика",audience:"Дети и родители",identity:{palette:["#7BC950","#FFF6E5","#2B3A42","#F4A261"],fonts:"Nunito + Comfortaa",logo:"Лампочка с листочками",graphics:"Яркие формы, иллюстрации, рукописные акценты"},brief:"Игровое приложение для детей: UI + 3D-персонаж + айдентика. Мягкий стиль, крупные элементы."},
+{id:35,direction:"Смешанное",level:"Продвинутый",task_type:"Создание с нуля",industry:"Экология",company:"UrbanRoots",style:"Минимализм",audience:"Городские жители 25–50 лет",identity:{palette:["#2D6A4F","#95D5B2","#F1FAEE","#1B4332"],fonts:"Fraunces + Inter",logo:"Корень, растущий из бетона",graphics:"Природа в городе, контраст, текстуры"},brief:"Кампания по озеленению города: айдентика + плакаты + 3D-визуализация + лендинг. Комплексный проект."},
+{id:36,direction:"Смешанное",level:"Средний",task_type:"Создание с нуля",industry:"Путешествия",company:"Wander",style:"Скандинавский",audience:"Путешественники 25–45 лет",identity:{palette:["#F5EFE6","#8B5E3C","#4A4A4A","#D4A373"],fonts:"Fraunces + Karla",logo:"Компас в круге",graphics:"Тёплые цвета, текстуры, фотографии природы"},brief:"Тревел-приложение: UI + 3D-иконки + айдентика. Комплексное задание на стыке направлений."}
+];
+
+/* ==================== СПРАВОЧНИКИ ==================== */
+const DIRS=["UI/UX","Графический дизайн","Брендинг и айдентика","Вёрстка (HTML/CSS)","3D","Смешанное"];
+const LEVELS=["Новичок","Средний","Продвинутый"];
+const TYPES=["Создание с нуля","Редизайн","Улучшение"];
+const FORMATS=["Текстовое ТЗ","Визуальный бриф с референсами","Смешанный"];
+const INDUSTRIES=["Еда","Технологии","Мода","Медицина","Образование","Искусство","Экология","Финансы","Спорт","Путешествия"];
+const STYLE_LIB={
+"Минимализм":{palette:["#0A0A0A","#FFFFFF","#B8B8B8","#8B0000"],fonts:"Inter + Bodoni Moda",graphics:"Много воздуха, крупная типографика, тонкие линии, акцент на контенте",mood:"тишина, порядок, точность, премиальная сдержанность"},
+"Брутализм":{palette:["#000000","#FFFFFF","#FF3B30","#F5F500"],fonts:"Archivo Black + JetBrains Mono",graphics:"Резкие контуры, крупные шрифты, контрастные блоки, отсутствие декора",mood:"дерзость, сырость, энергия, протест"},
+"Ретро":{palette:["#F4A261","#E76F51","#FFF3E0","#2A9D8F"],fonts:"Lobster + Open Sans",graphics:"Винтажные этикетки, штриховки, тёплые выцветшие цвета, шрифты 60–70-х",mood:"ностальгия, тепло, уют, доверие времени"},
+"Футуризм":{palette:["#0A0E27","#00F5D4","#FEE440","#FFFFFF"],fonts:"Chakra Petch + Inter",graphics:"Сетки, градиенты, неоновые акценты, глитч-эффекты",mood:"технологии, скорость, неон, завтрашний день"},
+"Органика":{palette:["#2D6A4F","#95D5B2","#F1FAEE","#E76F51"],fonts:"Fraunces + Inter",graphics:"Плавные линии, природные текстуры, рукописные элементы, скруглённые формы",mood:"природа, дыхание, мягкость, живая энергия"},
+"Ар-деко":{palette:["#1A1A1A","#C9A227","#F7F3E8","#4A1E1E"],fonts:"Cormorant Garamond + Montserrat",graphics:"Золотые линии, симметрия, геометрические орнаменты",mood:"гламур, роскошь, 1920-е, великий Гэтсби"},
+"Скандинавский":{palette:["#F5EFE6","#8B5E3C","#4A4A4A","#D4A373"],fonts:"Fraunces + Karla",graphics:"Тёплые текстуры, простые формы, естественные цвета, светлый фон",mood:"уют, хюгге, свет, честные материалы"},
+"Японский":{palette:["#F7F3E8","#1A1A1A","#C0392B","#8FA6A3"],fonts:"Zen Kaku Gothic New + Shippori Mincho",graphics:"Минимализм, асимметрия, свободное пространство (ма), природные мотивы",mood:"тишина, сдержанность, поэтичность, ваби-саби"},
+"Гранж":{palette:["#1A1A1A","#FF4500","#F0F0F0","#4A4A4A"],fonts:"Bebas Neue + Roboto Condensed",graphics:"Текстуры, брызги, рваные края, динамичные композиции",mood:"энергия, шум, уличная культура, драйв"},
+"Глассморфизм":{palette:["#0F172A","#6366F1","#22D3EE","#F8FAFC"],fonts:"Space Grotesk + Inter",graphics:"Полупрозрачные карточки, размытие фона, мягкие градиенты",mood:"воздушность, глубина, современный премиум, мягкий свет"}
+};
+const AUD_TPL=["Молодёжь 18–30 лет, активные пользователи смартфонов","Городские жители 25–45 лет с доходом выше среднего","B2B: специалисты и руководители отделов 30–55 лет","Семьи с детьми 25–50 лет, ценящие простоту и надёжность","Любители нишевых хобби 20–40 лет, ценящие аутентичность"];
+const NAME_A=["Nova","Apex","Lumo","Vero","Kyte","Mira","Onyx","Pavo","Sana","Orbit","Flora","Nord","Craft","Echo","Riff","Talo","Vista","Mono"];
+const NAME_B=["Lab","&Co","haus","loop","ware","stone","nest","works","studio","point","berry","line","field","spot","bay"];
+
+/* ==================== СОСТОЯНИЕ ==================== */
+const PARAMS=[
+ {key:"direction",label:"Направление",multi:true,options:DIRS},
+ {key:"level",label:"Уровень сложности",options:LEVELS},
+ {key:"task_type",label:"Тип задачи",options:TYPES},
+ {key:"format",label:"Формат задания",options:FORMATS},
+ {key:"style",label:"Стиль",options:Object.keys(STYLE_LIB)},
+ {key:"industry",label:"Тематика / отрасль",options:INDUSTRIES},
+ {key:"audience",label:"Целевая аудитория",options:AUD_TPL}
+];
+const state={};
+PARAMS.forEach(p=>state[p.key]={mode:"random",value:p.multi?[]:null});
+const $=id=>document.getElementById(id);
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const pickIf=(sel,arr)=>sel==="Случайно"?rnd(arr):sel;
+
+/* ==================== UI ПАРАМЕТРОВ ==================== */
+function renderParams(){
+  $("params").innerHTML=PARAMS.map(p=>`
+   <div class="p-row">
+    <div class="p-head">
+      <span class="p-label">${p.label}</span>
+      <div class="seg" data-key="${p.key}">
+        <button data-m="random" class="on">Случайно</button>
+        <button data-m="ai">AI подберёт</button>
+        <button data-m="manual">Вручную</button>
+      </div>
+    </div>
+    <div class="manual-box" id="mb-${p.key}"></div>
+   </div>`).join("");
+  document.querySelectorAll(".seg").forEach(seg=>{
+    seg.addEventListener("click",e=>{
+      const b=e.target.closest("button"); if(!b)return;
+      const k=seg.dataset.key; state[k].mode=b.dataset.m;
+      if(b.dataset.m!=="manual") state[k].value=PARAMS.find(p=>p.key===k).multi?[]:null;
+      seg.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+      renderManual(k);
+    });
+  });
+}
+function renderManual(key){
+  const p=PARAMS.find(x=>x.key===key), box=$("mb-"+key);
+  if(state[key].mode!=="manual"){box.className="manual-box";box.innerHTML="";return}
+  box.className="manual-box open";
+  box.innerHTML = p.multi
+    ? `<div class="chips">${p.options.map(o=>`<button class="chip" data-v="${o}">${o}</button>`).join("")}</div>`
+    : `<select><option value="">— выберите значение —</option>${p.options.map(o=>`<option>${o}</option>`).join("")}</select>`;
+  if(p.multi){
+    box.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{
+      const v=c.dataset.v, arr=state[key].value;
+      const i=arr.indexOf(v); i>=0?arr.splice(i,1):arr.push(v);
+      c.classList.toggle("on");
+    });
+  } else {
+    box.querySelector("select").onchange=e=>state[key].value=e.target.value||null;
+  }
+}
+renderParams();
+
+/* ==================== АККОРДЕОН ==================== */
+document.querySelectorAll(".sub-card .sub-head").forEach(h=>{
+  h.addEventListener("click",()=>h.parentElement.classList.toggle("open"));
+});
+
+/* ==================== РЕЗОЛВ ПАРАМЕТРОВ ==================== */
+function resolveParams(){
+  const r={};
+  const dir=state.direction;
+  r.direction = dir.mode==="manual"&&dir.value.length ? rnd(dir.value)
+              : dir.mode==="ai" ? smartDirection() : rnd(DIRS);
+  r.level = state.level.mode==="manual"&&state.level.value ? state.level.value
+          : state.level.mode==="ai" ? weightedLevel() : rnd(LEVELS);
+  r.task_type = state.task_type.mode==="manual"&&state.task_type.value ? state.task_type.value : rnd(TYPES);
+  r.format = state.format.mode==="manual"&&state.format.value ? state.format.value : rnd(FORMATS);
+  r.industry = state.industry.mode==="manual"&&state.industry.value ? state.industry.value : rnd(INDUSTRIES);
+  r.style = state.style.mode==="manual"&&state.style.value ? state.style.value : rnd(Object.keys(STYLE_LIB));
+  r.audience = state.audience.mode==="manual"&&state.audience.value ? state.audience.value
+             : state.audience.mode==="ai" ? aiAudience(r) : rnd(AUD_TPL);
+  r.device=pickIf($("optDevice").value,["Desktop","Mobile","Адаптив"]);
+  r.screens=pickIf($("optScreens").value,["1","3–5","5+"]);
+  r.elements=[...document.querySelectorAll("#optElements input:checked")].map(i=>i.value);
+  if(!r.elements.length) r.elements=rnd([["Навигация","Футер"],["Карточки","Формы"],["Навигация","Карточки","Модальные окна"]]);
+  r.brand=[...document.querySelectorAll("#optBrand input:checked")].map(i=>i.value);
+  r.carriers=pickIf($("optCarriers").value,["Цифровые","Печатные","Смешанные"]);
+  r.soft=pickIf($("optSoft").value,["Blender","Cinema 4D","Maya","Spline","Tinkercad"]);
+  r.model=pickIf($("optModel").value,["Предмет","Персонаж","Сцена","Иконка","Упаковка"]);
+  r.render=pickIf($("optRender").value,["Реалистичный","Стилизованный","Low-poly","Clay"]);
+  r.volume=$("optVolume").value; r.refs=$("optRefs").value==="Да"; r.crit=$("optCrit").value==="Да"; r.mood=$("optMood").value==="Да";
+  return r;
+}
+function smartDirection(){const w=[3,2,2,2,1.5,1.5];let s=w.reduce((a,b)=>a+b,0),x=Math.random()*s;for(let i=0;i<w.length;i++){x-=w[i];if(x<=0)return DIRS[i]}return DIRS[0]}
+function weightedLevel(){const x=Math.random();return x<.4?"Новичок":x<.8?"Средний":"Продвинутый"}
+function aiAudience(r){
+  if(r.direction==="Брендинг и айдентика"&&Math.random()<.5)return "B2B: специалисты и руководители отделов 30–55 лет";
+  if(["Медицина","Финансы"].includes(r.industry))return "Взрослые 30–55 лет, ценящие надёжность и экспертность";
+  if(["Образование"].includes(r.industry))return "Студенты и молодые специалисты 18–35 лет";
+  return rnd(AUD_TPL);
+}
+const genName=()=>rnd(NAME_A)+(Math.random()<.6?rnd(NAME_B):"");
+
+/* ==================== ГЕНЕРАЦИЯ ТЗ ==================== */
+function techBlock(r){
+  if(r.direction==="UI/UX")return `Платформа: ${r.device}. Количество экранов: ${r.screens}. Обязательные элементы: ${r.elements.join(", ")}. Интерактивный прототип, дизайн-система (компоненты, стили, сетка), состояния экранов (default / hover / error / empty).`;
+  if(r.direction==="Вёрстка (HTML/CSS)")return `Семантическая HTML-разметка, современный CSS (Grid/Flexbox, custom properties), адаптив от 320px до 1440px, доступность (контраст, alt, focus-состояния). Устройство: ${r.device}, страниц: ${r.screens}. Обязательные блоки: ${r.elements.join(", ")}.`;
+  if(r.direction==="Графический дизайн")return `Форматы: печать 300 dpi (CMYK) + digital (RGB). Размеры указать в макете. Единая сетка и модульная система для всей серии. Исходники в редактируемом виде + экспорт в PDF/PNG.`;
+  if(r.direction==="Брендинг и айдентика")return `Носители: ${r.carriers}. Включить: ${r.brand.join(", ")}. Логотип в векторе (основной знак + монограмма + версия для тёмного фона), гайдлайн по минимальным отступам и запретам.`;
+  if(r.direction==="3D")return `Софт: ${r.soft}. Тип модели: ${r.model}. Стиль рендера: ${r.render}. Топология чистая, сцена с освещением (3-point light), минимум 3 ракурса, рендер от 2K.`;
+  return `Комплексный проект: минимум два направления должны быть связаны единой айдентикой (например, UI-прототип + 3D-элементы + базовый брендинг).`;
+}
+function stepsBlock(r){
+  const base=["Изучить отрасль и 2–3 конкурентов, собрать мудборд","Сформулировать визуальную концепцию и проверить её на целевой аудитории","Разработать первую итерацию и провести самопроверку по критериям","Собрать презентацию результата (мокапы/прототип/рендеры)","Провести итерацию правок по обратной связи"];
+  const map={
+   "UI/UX":"Составить CJM и User Flow, затем wireframes всех экранов",
+   "Вёрстка (HTML/CSS)":"Нарисовать структурную схему блоков, затем сверстать макет по сетке",
+   "Графический дизайн":"Подготовить 2 стилевых концепта и выбрать один для серии",
+   "Брендинг и айдентика":"Начертатить 10+ вариантов логотипа и отобрать 3 на проработку",
+   "3D":"Заблокировать форму (blockout), затем детализировать модель и материалы",
+   "Смешанное":"Разделить проект на этапы по направлениям и согласовать общую стилистику"};
+  return [map[r.direction],...base];
+}
+function refsBlock(r){
+  const q=encodeURIComponent(r.style+" "+r.industry+" design");
+  return [`https://www.pinterest.com/search/pins/?q=${q}`,`https://www.behance.net/search/projects?search=${q}`,`https://dribbble.com/search/${q}`];
+}
+function criteriaBlock(){
+  return ["Соответствие выбранному стилю и палитре","Читаемость и иерархия типографики","Логичная структура и навигация","Единство визуального языка во всех материалах","Аккуратность исполнения (сетка, отступы, выравнивание)","Работоспособность в реальных носителях/разрешениях","Оригинальность: задание решено без шаблонных клише"];
+}
+function buildIdentity(r,company){
+  const s=STYLE_LIB[r.style];
+  return {palette:s.palette,fonts:s.fonts,logo:`Знак для «${company}»: абстрактная метафора, связанная с «${r.industry}», в эстетике стиля «${r.style}» (текстовое описание, без генерации изображений)`,graphics:s.graphics};
+}
+function composeAI(r){
+  const company=genName();
+  const idn=buildIdentity(r,company);
+  const titles={
+   "Создание с нуля":`${r.direction}: создать с нуля для «${company}» (${r.industry})`,
+   "Редизайн":`${r.direction}: редизайн для «${company}» (${r.industry})`,
+   "Улучшение":`${r.direction}: улучшить существующий продукт «${company}» (${r.industry})`};
+  const briefByDir={
+   "UI/UX":`приложение для сферы «${r.industry}»: ${r.screens} экрана, устройство — ${r.device}. Обязательные элементы: ${r.elements.join(", ")}.`,
+   "Вёрстка (HTML/CSS)":`адаптивный сайт для «${r.industry}»: ${r.screens} страниц, блоки — ${r.elements.join(", ")}.`,
+   "Графический дизайн":`серию из 3–5 печатных/digital-макетов (плакаты, постеры или обложки) для «${r.industry}».`,
+   "Брендинг и айдентика":`айдентику бренда: ${r.brand.join(", ")}. Носители: ${r.carriers}.`,
+   "3D":`3D-модель типа «${r.model}» для «${r.industry}»: софт — ${r.soft}, рендер — ${r.render}.`,
+   "Смешанное":`комплексный проект на стыке UI, графики и брендинга для «${r.industry}».`};
+  return {title:titles[r.task_type],company,desc:`«${company}» — вымышленный бренд из сферы «${r.industry}», обращающийся к ${r.audience}. Задача: ${briefByDir[r.direction]}`,brief:briefByDir[r.direction],identity:idn,db:false};
+}
+function fromDB(r){
+  let pool=TASKS.filter(t=>
+    (state.direction.mode!=="manual"||state.direction.value.includes(t.direction))&&
+    (state.level.mode!=="manual"||state.level.value===t.level)&&
+    (state.task_type.mode!=="manual"||state.task_type.value===t.task_type)&&
+    (state.industry.mode!=="manual"||state.industry.value===t.industry)&&
+    (state.style.mode!=="manual"||state.style.value===t.style));
+  if(!pool.length)pool=TASKS;
+  const t=rnd(pool);
+  return {title:`${t.direction}: ${t.company} — ${t.brief.split(".")[0]}`,company:t.company,
+    desc:`«${t.company}» — бренд из сферы «${t.industry}». Аудитория: ${t.audience}. Задание из базы №${t.id}.`,
+    brief:t.brief,identity:t.identity,direction:t.direction,style:t.style,industry:t.industry,level:t.level,task_type:t.task_type,db:true};
+}
+
+/* ==================== СБОРКА ТЗ ==================== */
+let lastTZ=null;
+function generate(){
+  const r=resolveParams();
+  const src=document.querySelector('input[name=src]:checked').value;
+  const g = src==="db" ? fromDB(r) : composeAI(r);
+  const style=STYLE_LIB[g.style]||STYLE_LIB[r.style];
+  const idn=g.identity;
+  const S=[];
+  S.push({h:"Компания",p:`<b>«${g.company}»</b> — ${g.desc}`});
+  S.push({h:"Цель задания",p:`${r.task_type}: ${g.brief} Уровень сложности: ${g.level||r.level}. Формат сдачи: ${r.format}.`});
+  S.push({h:"Целевая аудитория",p:g.audience||(r.audience)});
+  if(r.mood)S.push({h:"Стиль и мудборд",p:`Стиль — «${g.style||r.style}». Настроение: ${style.mood}. Ключевые слова для мудборда: ${r.industry.toLowerCase()}, ${(g.style||r.style).toLowerCase()}, ${style.graphics.split(",")[0].toLowerCase()}.`});
+  else S.push({h:"Стиль",p:`Стиль — «${g.style||r.style}».`});
+  S.push({h:"Айдентика (текстовое описание)",p:`Палитра: ${idn.palette.join(", ")}.<br>Шрифтовая пара: ${idn.fonts}.<br>Логотип: ${idn.logo}.<br>Графические элементы: ${idn.graphics}.`});
+  if(r.volume==="Подробное ТЗ"){
+    S.push({h:"Технические требования",p:techBlock({...r,direction:g.direction||r.direction})});
+    S.push({h:"Что нужно сделать (пошагово)",list:stepsBlock({...r,direction:g.direction||r.direction})});
+    if(r.refs)S.push({h:"Референсы",list:refsBlock({...r,style:g.style||r.style,industry:g.industry||r.industry}).map(u=>`<a href="${u}" target="_blank">${u}</a>`)});
+    if(r.crit)S.push({h:"Критерии оценки (чек-лист)",list:criteriaBlock()});
+  } else {
+    S.push({h:"Суть задания",p:`${g.brief} Соблюдай палитру, шрифтовую пару и характер графики из раздела «Айдентика».`});
+  }
+  lastTZ={r,g,S,src};
+  renderTZ(lastTZ);
+}
+function renderTZ({r,g,S,src}){
+  $("placeholder").classList.add("hidden");
+  const out=$("tzOut"); out.classList.remove("hidden");
+  $("tzActions").classList.remove("hidden");
+  $("btnAgain").classList.remove("hidden");
+  out.innerHTML=`
+   <div class="meta-chips">
+     <span class="m">${src==="db"?"Источник: база (36 заданий)":"Источник: AI"}</span>
+     <span class="m">${g.direction||r.direction}</span>
+     <span class="m">${g.level||r.level}</span>
+     <span class="m">${r.task_type}</span>
+     <span class="m">${g.industry||r.industry}</span>
+     <span class="m">${g.style||r.style}</span>
+   </div>
+   <div class="tz-title">${g.title}</div>
+   ${S.map((s,i)=>`<div class="tz-section"><h4>${i+1}. ${s.h}</h4>${s.p?`<p>${s.p}</p>`:`<ul>${s.list.map(li=>`<li>${li}</li>`).join("")}</ul>`}
+     ${s.h.startsWith("Айдентика")?`<div class="palette">${g.identity.palette.map(c=>`<div class="sw" style="background:${c}"><small>${c}</small></div>`).join("")}</div>`:""}
+   </div>`).join("")}`;
+  $("resultCard").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+/* ==================== ЭКСПОРТ ==================== */
+function tzPlain(){
+  const {r,g,S}=lastTZ;
+  let t=`${g.title.toUpperCase()}\nСгенерировано: ${new Date().toLocaleString("ru-RU")}\nИсточник: ${lastTZ.src==="db"?"база заданий":"AI"}\nНастройки: ${g.direction||r.direction} · ${g.level||r.level} · ${r.task_type} · ${r.format}\n${"—".repeat(46)}\n\n`;
+  S.forEach((s,i)=>{t+=`${i+1}. ${s.h}\n`;t+= s.p? s.p.replace(/<[^>]+>/g,"")+"\n\n" : s.list.map(li=>"  • "+li.replace(/<[^>]+>/g,"")).join("\n")+"\n\n";});
+  return t;
+}
+function rtfEscape(s){
+  return s
+    .replace(/\\/g,"\\\\")
+    .replace(/([{}])/g,"\\$1")
+    .replace(/[^\x00-\x7F]/g,ch=>{
+      const code=ch.charCodeAt(0);
+      return code>32767 ? "\\u"+(code-65536)+"?":"\\u"+code+"?";
+    })
+    .replace(/\n/g,"\\line ");
+}
+function downloadRTF(){
+  const plain=tzPlain();
+  const rtf="{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\f0\\fs26 "+rtfEscape(plain)+"}";
+  const blob=new Blob([rtf],{type:"application/rtf;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`design-brief-${Date.now()}.rtf`; a.click(); URL.revokeObjectURL(a.href);
+  toast("Файл .rtf сохранён");
+}
+async function copyTZ(){
+  try{await navigator.clipboard.writeText(tzPlain());toast("ТЗ скопировано в буфер")}
+  catch{toast("Не удалось скопировать")}
+}
+function toast(msg){
+  const t=$("toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200);
+}
+$("btnGen").onclick=generate;
+$("btnAgain").onclick=generate;
+$("btnSurprise").onclick=()=>{
+  PARAMS.forEach(p=>{state[p.key]={mode:"random",value:p.multi?[]:null};
+    const seg=document.querySelector(`.seg[data-key="${p.key}"]`);
+    seg.querySelectorAll("button").forEach((b,i)=>b.classList.toggle("on",i===0));
+    renderManual(p.key);});
+  ["optDevice","optScreens","optCarriers","optSoft","optModel","optRender"].forEach(id=>$(id).selectedIndex=0);
+  document.querySelectorAll('#optElements input,#optBrand input').forEach(c=>c.checked=c.value==="Логотип"||c.value==="Палитра"||c.value==="Шрифты");
+  generate();
+};
+$("btnRtf").onclick=downloadRTF;
+$("btnCopy").onclick=copyTZ;
+</script>
+</body>
+</html>
