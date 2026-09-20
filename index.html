@@ -921,6 +921,71 @@ const FIELDS={
  "Анимация":[P("Что анимируется",r=>rnd(["вращение продукта","персонаж в движении","облёт камеры вокруг сцены"])),P("Длительность",r=>rnd(["5 секунд","10 секунд"])),P("Стиль",r=>r.render),P("Техника",r=>rnd(["покадровая","физика движения","камерный облёт"])),P("Освещение",r=>rnd(["студийное","динамическое"]))]
 }
 };
+/* ==================== ПУЛЫ РЕФЕРЕНСОВ ==================== */
+const REFS_POOLS={
+ "Постер":["швейцарская типографика","польский постер 60-х","японский графический дизайн","баухаус","русский авангард","конструктивизм","психоделика 60-х","мемфис-дизайн","брутализм в графике","ар-деко","оп-арт","минимализм","леттризм","дадаизм","поп-арт","японский минимализм","скандинавский дизайн","бразильский тропикализм","мексиканский фольклор","африканские паттерны","ближневосточная каллиграфия","китайская живопись тушью","vaporwave","synthwave","Y2K-эстетика","grunge","lo-fi эстетика","глитч-арт","коллаж 80-х","тишью-коллаж","печатная зернистость","шелкография","ризография"],
+ "Иллюстрация":["детская книжная иллюстрация","советская мультипликация","японское аниме","ар-нуво","ар-деко","баухаус","изометрия","low-poly","пиксель-арт","акварель","гуашь","тушь","линогравюра","ксилография","офорт","цифровая живопись","векторная графика","ретро-футуризм","ботанические зарисовки","анатомические рисунки","карты и схемы","наивное искусство"],
+ "Визитка":["швейцарская типографика","минимализм","леттеринг","тиснение фольгой","letterpress","тиснение блинтом","вырубка","конгрев","ар-деко","японский минимализм","скандинавский дизайн","чёрно-белая графика","шрифтовой дизайн","каллиграфия","монограмма","гербовая композиция"],
+ "Упаковка":["японская упаковка","скандинавский минимализм","крафтовая эстетика","винтажные этикетки","аптечная эстетика","ретро-упаковка 50-х","ар-деко","баухаус","мемфис","брутализм","эко-дизайн","люксовый минимализм","яркая поп-упаковка","детская упаковка","советский ГОСТ","японские сладости","чайная упаковка","ближневосточные орнаменты"],
+ "Инфографика":["швейцарская школа","изотип","отто нейрат","статистические постеры","японская инфографика","советские плакаты","изометрия","пиктограммы","глифы","дата-визуализация","схемы метро","анатомические схемы","научные иллюстрации","газетная вёрстка","минимализм","брутальная инфографика"],
+ "Обложка":["penguin books","faber & faber","vintage crime","penguin classics","harper collins","японская книжная обложка","советская книжная обложка","ар-деко","минимализм","типографический дизайн","коллаж","фотография","иллюстрация","абстракция","леттеринг","тиснение фольгой"],
+ "Баннер":["швейцарская типографика","японский дизайн","мемфис","киберпанк","минимализм","брутализм","глитч-эстетика","photo-based","иллюстративный","типографический","коллаж","ретро-футуризм","Y2K","vaporwave","3D-графика"],
+ "Мерч":["уличная мода","скейтборд-культура","хип-хоп эстетика","японский стритвир","андеграундные принты","винтажные туристические футболки","спортивная эстетика","рок-мерч 80-х","металл-мерч","поп-арт","аниме-принты","леттеринг","гравюра","коллаж","шелкография"],
+ "Логотип":["швейцарский дизайн","монограммы","геометрическая абстракция","минимализм","леттеринг","каллиграфия","геральдика","японские ками-знаки","баухаус","мемфис","конструктивизм","псевдо-3D","глитч","брутализм","органика"],
+ "Фирменный стиль":["швейцарский дизайн","скандинавский минимализм","японский дизайн","баухаус","мемфис","ар-деко","брутализм","конструктивизм","поп-арт","глассморфизм","киберпанк","эко-дизайн","премиум-сегмент","люксовая айдентика"],
+ "Брендбук":["IBM design language","Google material","Apple HIG","скандинавский стиль","японский дизайн","швейцарский дизайн","конструктивизм","баухаус","брутализм","глассморфизм","эко-айдентика"],
+ "Ребрендинг":["минимализм 2020-х","нео-брутализм","глассморфизм","киберпанк","эко-эстетика","Y2K-возрождение","ретро-футуризм","3D-графика","типографический дизайн","коллаж"],
+ "Айдентика события":["фестивальные постеры 60-х","вудсток","коачелла","glastonbury","sonar","берлинале","канны","венеция","биеннале","олимпийские игры","экспо","конференции TED","дизайн-недели"],
+ "Персональный бренд":["минимализм","скандинавский стиль","японский стиль","швейцарский дизайн","конструктивизм","типографика","монограмма","леттеринг","портретная фотография","коллаж"],
+ "UI/UX":["material design","human interface","fluent design","neumorphism","glassmorphism","minimalism","brutalist web","y2k web","cyberpunk UI","scandinavian UI","japanese UI","dark mode","dashboard aesthetics","apple design","google design","microsoft design"],
+ "Лендинг":["stripe","linear","vercel","notion","figma","framer","awwwards","godly.website","land-book","minima","brutalist websites","editorial design","swiss grid","dark hero","gradient mesh"],
+ "E-commerce":["shopify","everlane","glossier","aesop","muji","apple store","farfetch","ssense","mr porter","amazon","wildberries","ozon"],
+ "Игровой интерфейс":["HUD из cyberpunk 2077","death stranding UI","destiny UI","overwatch UI","valorant UI","apex UI","dark souls UI","elden ring UI","zelda botw UI","genshin impact UI","retro game UI","arcade UI"],
+ "Онбординг":["duolingo","headspace","calm","notion onboarding","slack onboarding","airbnb onboarding","tinder onboarding","spotify wrapped","mailchimp","linear onboarding"],
+ "Вёрстка":["swiss grid","editorial layout","brutalist web","neumorphism","glassmorphism","dark mode","minimalist web","magazine layout","newspaper layout","japanese web","scandinavian web","micro-interactions"],
+ "3D":["pixar","dreamworks","blender open movies","beeple","ghibli-style 3D","low-poly art","isometric room","clay render","киберпанк","стимпанк","artstation trending","behance 3D","substance painter","quixel megascans","blender guru"]
+};
+const STYLE_REFS={
+ "Киберпанк":["неоновая эстетика 80-х","японская аниме-графика","глитч-арт","synthwave","blade runner","ghost in the shell","akira"],
+ "Минимализм":["dieter rams","muji","apple design","киото","scandinavian design","japanese simplicity"],
+ "Стимпанк":["victorian london","латунь и шестерёнки","jules verne","wild wild west","bioshock"],
+ "Vaporwave":["windows 95","античные статуи","palm trees","gradient sunsets","neon grids","80s malls"],
+ "Y2K":["логотипы 2000-х","chrome","bling","ipod","msn","winamp"],
+ "Брутализм":["neubrutalism web","голый бетон в графике","raw grid","моноширинная типографика"],
+ "Глассморфизм":["glass UI","размытие и свечение","layered transparency"],
+ "Ретро":["винтажная печать","шрифты 60–70-х","плёночная фотография"],
+ "Футуризм":["sci-fi концепты","металлик","неоновый свет","обтекаемые формы"],
+ "Органика":["природные текстуры","плавные линии","крафт-материалы"],
+ "Ар-деко":["геометрические орнаменты","золотые линии","1920-е"],
+ "Скандинавский":["хюгге","светлые тона","натуральное дерево"],
+ "Японский":["минимализм ма","асимметрия","природные мотивы"],
+ "Гранж":["потёртые текстуры","уличная эстетика","гаражный рок"],
+ "Поп-арт":["комиксы","бен-day точки","яркие контрасты"],
+ "Сюрреализм":["сюрреалистические коллажи","искажение реальности","дали и магритт"],
+ "Лоу-фай":["зернистость","винил","пикселизация"],
+ "Мемфис":["кислотные цвета","геометрический хаос","80-е"],
+ "Баухаус":["основные цвета","строгая геометрия","форм следует за функцией"],
+ "Эклектика":["микс эпох","неожиданные сочетания","текстурные слои"]
+};
+let lastRefsString="";
+function refsPoolFor(dir,subdir){
+  if(subdir==="Постер")return REFS_POOLS["Постер"];
+  const map={"UI/UX|Мобильное приложение":"UI/UX","UI/UX|Веб-приложение":"UI/UX",
+   "Вёрстка (HTML/CSS)|Лендинг":"Вёрстка","Вёрстка (HTML/CSS)|Многостраничный сайт":"Вёрстка","Вёрстка (HTML/CSS)|Компонент":"Вёрстка","Вёрстка (HTML/CSS)|Email-шаблон":"Вёрстка","Вёрстка (HTML/CSS)|Анимация":"Вёрстка"};
+  return REFS_POOLS[map[`${dir}|${subdir}`]||subdir]||REFS_POOLS["Постер"];
+}
+function makeRefs(r,dir,subdir,posterType){
+  const pool=[...refsPoolFor(dir,subdir)];
+  if(r&&r.style&&r.style!==HOLE){
+    String(r.style).split(" + ").forEach(st=>{if(STYLE_REFS[st])pool.push(...STYLE_REFS[st]);});
+  }
+  const n=2+Math.floor(Math.random()*2);
+  let out=pool.sort(()=>Math.random()-0.5).slice(0,n).join(", ");
+  if(out===lastRefsString&&pool.length>n)out=pool.sort(()=>Math.random()-0.5).slice(0,n).join(", ");
+  lastRefsString=out;
+  return out;
+}
+
 /* ==================== РАСШИРЕННЫЙ БЛОК «БОЛЬШЕ ДЕТАЛЕЙ» ==================== */
 function catOf(dir,subdir,posterType){
   if(posterType||subdir==="Постер")return "poster";
@@ -939,7 +1004,7 @@ const EXTRA_TPL={
  "3d":{steps:["Заблокируй базовую форму (blockout)","Добавь детали и проработай силуэт","Настрой материалы и текстуры","Выстави свет (3-точечный)","Сделай рендер в 3 ракурсах"],tech:["Полигонаж: до 50k на объект","Рендер: минимум 2K","Форматы: PNG + исходник (.blend и др.)","Освещение: студийное 3-точечное"],refs:"студийный продуктовый рендер, стилизованные игровые ассеты",mistakes:["Грязная топология с артефактами","Пересветы и выбитые белые пятна","Отсутствие контактных теней"]}
 };
 const CRITERIA_GENERIC=["Соответствие брифу: все указанные данные на месте","Иерархия: главное считывается за 3 секунды","Аккуратность: сетка, выравнивание, единые отступы","Оригинальность: решение без шаблонных клише"];
-function genExtra(dir,subdir,posterType,palette){
+function genExtra(r,dir,subdir,posterType,palette){
   const T=EXTRA_TPL[catOf(dir,subdir,posterType)];
   const steps=[...T.steps];
   for(let i=steps.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[steps[i],steps[j]]=[steps[j],steps[i]];}
@@ -949,7 +1014,7 @@ function genExtra(dir,subdir,posterType,palette){
     steps:steps.slice(0,3+Math.floor(Math.random()*3)),
     tech:T.tech,
     criteria:(()=>{const n=3+Math.floor(Math.random()*3);const base=crit.slice(0,palette&&palette.length?Math.min(n,crit.length-1):n);return palette&&palette.length?base.concat([crit[crit.length-1]]):base;})(),
-    refs:T.refs,
+    refs:makeRefs(r,dir,subdir,posterType),
     mistakes:T.mistakes
   };
 }
@@ -959,7 +1024,7 @@ function narrowBrief(r,g,dir,subdir,posterType){
     const ctx={};
     const sections=posterShort(pt,ctx);
     const pal=(sections.find(s=>s.palette)||{}).palette;
-    return {title:`Постер: ${pt}`,chips:["Графический дизайн","Постер",pt,r.level],sections,extra:genExtra(dir,subdir,pt,pal)};
+    return {title:`Постер: ${pt}`,chips:["Графический дизайн","Постер",pt,r.level],sections,extra:genExtra(r,dir,subdir,pt,pal)};
   }
   const pool=FIELDS[dir]&&FIELDS[dir][subdir];
   if(!pool)return null;
@@ -976,7 +1041,7 @@ function narrowBrief(r,g,dir,subdir,posterType){
   const S=[{h:"Суть задания",list:lines}];
   if(pal)S.push({h:palTitle,palette:pal});
   S.push({h:"Свобода действий",p:rnd(REMARKS),remark:true});
-  return {title:`${dir}: ${subdir}`,chips:[dir,subdir,r.level],sections:S,extra:genExtra(dir,subdir,null,pal)};
+  return {title:`${dir}: ${subdir}`,chips:[dir,subdir,r.level],sections:S,extra:genExtra(r,dir,subdir,null,pal)};
 }
 
 /* ==================== СБОРКА ТЗ ==================== */
@@ -1003,7 +1068,7 @@ function generate(surprise){
   if(subdir&&!(subdir==="Постер"&&!posterType)){
     const NB=narrowBrief(r,g,dir,subdir,posterType);
     if(NB){
-      lastTZ={r,g,S:NB.sections,src,narrow:true,title:NB.title,chips:NB.chips,poster:subdir==="Постер",posterType,extra:NB.extra};
+      lastTZ={r,g,S:NB.sections,src,narrow:true,title:NB.title,chips:NB.chips,poster:subdir==="Постер",posterType,extra:NB.extra,refsDir:dir,refsSub:subdir};
       setStyleTip();
       renderTZ(lastTZ);
       return;
@@ -1065,9 +1130,11 @@ function renderTZ(tz){
      <div class="tz-section"><h4>Что нужно сделать</h4><ul>${tz.extra.steps.map(li=>`<li>${li}</li>`).join("")}</ul></div>
      <div class="tz-section"><h4>Технические требования</h4><ul>${tz.extra.tech.map(li=>`<li>${li}</li>`).join("")}</ul></div>
      <div class="tz-section"><h4>Критерии оценки</h4><ul>${tz.extra.criteria.map(li=>`<li>${li}</li>`).join("")}</ul></div>
-     <div class="tz-section"><h4>Референсы и мудборд</h4><p>${tz.extra.refs}</p></div>
+     <div class="tz-section"><h4>Референсы и мудборд</h4><p><span id="refsText">${tz.extra.refs}</span> <button class="pal-copy" id="refsRoll" type="button" title="Новая комбинация референсов">↻ обновить</button></p></div>
      <div class="tz-section"><h4>Частые ошибки</h4><ul>${tz.extra.mistakes.map(li=>`<li>${li}</li>`).join("")}</ul></div>
    </div></div>`:""}`;
+  const refsRoll=$("refsRoll");
+  if(refsRoll)refsRoll.onclick=()=>{ $("refsText").textContent=makeRefs(r,tz.refsDir,tz.refsSub,tz.posterType); };
   const btnMore=$("btnMore"), tzExtra=$("tzExtra");
   if(btnMore)btnMore.onclick=()=>{
     const closed=tzExtra.classList.toggle("hidden");
