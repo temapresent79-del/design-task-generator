@@ -417,13 +417,50 @@ function buildIdentity(r,company){
   const s=STYLE_LIB[r.style];
   return {palette:s.palette,fonts:s.fonts,logo:`Знак для «${company}»: абстрактная метафора, связанная с «${r.industry.toLowerCase()}», в эстетике стиля «${r.style}» (текстовое описание, без генерации изображений)`,graphics:s.graphics};
 }
+/* ==================== РЕАЛЬНЫЕ КОМПАНИИ ==================== */
+const realCompanies = {
+  food: ["Coca-Cola", "Pepsi", "McDonald's", "KFC", "Burger King", "Starbucks", "Subway", "Domino's", "Nestlé", "Oreo", "Heinz", "Lay's"],
+  tech: ["Apple", "Google", "Microsoft", "Samsung", "Xiaomi", "Adobe", "Figma", "Notion", "Slack", "Zoom", "Discord", "Telegram"],
+  social: ["Instagram", "TikTok", "Twitter/X", "Reddit", "Snapchat", "Spotify", "Netflix", "YouTube", "Twitch", "SoundCloud"],
+  transport: ["Uber", "Bolt", "Tesla", "BMW", "Toyota", "Яндекс.Такси", "Ozon", "Wildberries", "Amazon", "AliExpress", "Delivery Club", "Самокат"],
+  finance: ["Сбер", "Т-Банк", "Альфа-Банк", "PayPal", "Revolut", "Monobank", "ВТБ"],
+  fashion: ["Nike", "Adidas", "Puma", "Zara", "H&M", "Uniqlo", "Gucci", "Balenciaga", "New Balance"],
+  games: ["Steam", "Epic Games", "PlayStation", "Xbox", "Nintendo", "Roblox", "Minecraft"],
+  education: ["Duolingo", "Coursera", "Skillbox", "Skyeng", "Strava", "MyFitnessPal", "Fitbit", "Garmin"],
+  travel: ["Booking.com", "Airbnb", "Aviasales", "TripAdvisor", "Аэрофлот"]
+};
+const REAL_MAP={"Еда":"food","Технологии":"tech","Мода":"fashion","Образование":"education","Финансы":"finance","Спорт":"education","Путешествия":"travel","Искусство":"social","Игры":"games"};
+function realCompany(ind){
+  const pool=realCompanies[REAL_MAP[ind]]||[];
+  const all=[].concat(...Object.values(realCompanies));
+  return pool.length?rnd(pool):rnd(all);
+}
+const IMPROVEMENTS=[
+ "Улучши онбординг в приложении {c}",
+ "Переделай поиск в {c}",
+ "Оптимизируй оформление заказа в {c}",
+ "Улучши навигацию на сайте {c}",
+ "Сократи путь пользователя до целевого действия в {c}",
+ "Переделай экран корзины в {c}",
+ "Улучши страницу профиля пользователя в {c}",
+ "Оптимизируй форму обратной связи в {c}",
+ "Переделай главную страницу {c}",
+ "Улучши push-уведомления и email-рассылки {c}",
+ "Оптимизируй фильтры каталога в {c}",
+ "Улучши экран оплаты в {c}",
+ "Переделай состояния загрузки и ошибок в {c}",
+ "Улучши мобильную версию сайта {c}",
+ "Сделай редизайн самого проблемного экрана в {c}"
+];
 function composeAI(r){
-  const company=genName();
+  const real=["Редизайн","Улучшение"].includes(r.task_type);
+  const company=real?realCompany(r.industry):genName();
   const idn=buildIdentity(r,company);
-  const titles={
-   "Создание с нуля":`${r.direction}: создать с нуля для «${company}» (${r.industry})`,
-   "Редизайн":`${r.direction}: редизайн для «${company}» (${r.industry})`,
-   "Улучшение":`${r.direction}: улучшить существующий продукт «${company}» (${r.industry})`};
+  if(real){
+    idn.logo="Предлагаемое решение: "+idn.logo;
+    idn.graphics="Предлагаемое решение — "+idn.graphics;
+    idn.fonts=idn.fonts+" (предлагается заменить)";
+  }
   const briefByDir={
    "UI/UX":`приложение для сферы «${r.industry.toLowerCase()}»: ${r.screens} экрана, устройство — ${r.device}. Обязательные элементы: ${r.elements.join(", ")}.`,
    "Вёрстка (HTML/CSS)":`адаптивный сайт для «${r.industry.toLowerCase()}»: ${r.screens} страниц, блоки — ${r.elements.join(", ")}.`,
@@ -431,7 +468,20 @@ function composeAI(r){
    "Брендинг и айдентика":`айдентику бренда: ${r.brand.join(", ")}. Носители: ${r.carriers}.`,
    "3D":`3D-модель типа «${r.model}» для «${r.industry.toLowerCase()}»: софт — ${r.soft}, рендер — ${r.render}.`,
    "Смешанное":`комплексный проект на стыке UI, графики и брендинга для «${r.industry.toLowerCase()}».`};
-  return {title:titles[r.task_type],company,brief:briefByDir[r.direction],identity:idn,db:false};
+  const core=briefByDir[r.direction];
+  let title,brief;
+  if(r.task_type==="Редизайн"){
+    title=`${r.direction}: полный редизайн «${company}»`;
+    brief=`Переосмыслить визуальный язык, айдентику и пользовательский опыт «${company}». Объект работ: ${core}`;
+  } else if(r.task_type==="Улучшение"){
+    const task=rnd(IMPROVEMENTS).replace("{c}",`«${company}»`);
+    title=`${r.direction}: ${task}`;
+    brief=`${task}. Сохранить узнаваемость бренда и улучшить целевую метрику (конверсия, удержание, время на задачу). Объект: ${core}`;
+  } else {
+    title=`${r.direction}: создать с нуля для «${company}» (${r.industry})`;
+    brief=core;
+  }
+  return {title,company,brief,identity:idn,db:false,real};
 }
 function fromDB(r){
   const t=rnd(TASKS);
@@ -468,7 +518,7 @@ function generate(surprise){
   const low=v=>v===HOLE?v:String(v).toLowerCase();
   const dir=g.direction||r.direction;
   const S=[];
-  S.push({h:"Компания",p:`Бренд <b>«${g.company}»</b> — сфера «${low(g.industry||r.industry)}».${g.db?` Задание из базы №${g.dbId}.`:""}`});
+  S.push({h:"Компания",p:`Бренд <b>«${g.company}»</b> — сфера «${low(g.industry||r.industry)}».${g.real?" Реальная компания: сохраняй узнаваемость бренда, предлагай обоснованные решения.":""}${g.db?` Задание из базы №${g.dbId}.`:""}`});
   const paramsList=[
     `Бренд: «${g.company}»`,
     `Сфера: ${low(g.industry||r.industry)}`,
