@@ -1140,14 +1140,14 @@ function renderTZ(tz){
     const closed=tzExtra.classList.toggle("hidden");
     btnMore.textContent=closed?"+ Больше деталей":"− Скрыть детали";
   };
-  out.querySelectorAll(".pal-copy").forEach(b=>b.onclick=async()=>{
+  out.querySelectorAll(".pal-copy").forEach(b=>{if(b.id==="refsRoll")return;b.onclick=async()=>{
     try{
       await navigator.clipboard.writeText(b.dataset.hex);
       const t=b.parentElement.querySelector(".pal-toast");
       t.classList.add("show");
       setTimeout(()=>t.classList.remove("show"),1500);
     }catch(e){}
-  });
+  }});
   $("resultCard").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 
