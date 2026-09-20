@@ -108,6 +108,15 @@ select:focus{border-color:var(--accent-2)}
 .tz-section p, .tz-section li{font-size:14.5px; line-height:1.65; color:var(--ink); overflow-wrap:break-word}
 .tz-section ul{padding-left:20px}
 .tz-section a{color:var(--accent-2); word-break:break-all}
+.tz-remark{font-style:italic; color:var(--ink-soft)!important}
+.pal-row{display:flex; flex-wrap:wrap; gap:14px; margin:10px 0 4px}
+.pal-item{display:flex; flex-direction:column; align-items:center; gap:5px; width:74px}
+.pal-chip{width:40px; height:40px; border-radius:12px; border:1px solid var(--line); box-shadow:0 6px 14px rgba(90,58,40,.15)}
+.pal-hex{font-size:11px; font-weight:700; color:var(--ink-soft)}
+.pal-copy{border:1px solid var(--line); background:rgba(255,255,255,.6); border-radius:999px; font-family:inherit; font-size:10.5px; font-weight:700; padding:3px 10px; cursor:pointer; transition:.2s; color:var(--ink)}
+.pal-copy:hover{background:var(--accent); color:#F7F1E8; border-color:var(--accent)}
+.pal-toast{font-size:10.5px; font-weight:800; color:var(--accent); opacity:0; transition:opacity .2s}
+.pal-toast.show{opacity:1}
 .palette{display:flex; gap:8px; margin:8px 0; flex-wrap:wrap}
 .sw{width:44px; height:30px; border-radius:10px; border:1px solid var(--line)}
 .sw small{display:block; font-size:9px; text-align:center; margin-top:3px; color:var(--ink-soft)}
@@ -283,6 +292,7 @@ const PARAMS=[
 ];
 const state={};
 PARAMS.forEach(p=>state[p.key]={mode:"random",value:p.multi?[]:null});
+state.subdir=null; state.posterType=null;
 const $=id=>document.getElementById(id);
 const rnd=a=>a[Math.floor(Math.random()*a.length)];
 const HOLE="Хз, заказчик сказал тебе разобраться";
@@ -296,7 +306,7 @@ function renderParams(){
       <span class="p-label">${p.label}${p.key==="style"?'<button class="info-btn" id="styleInfo" type="button" aria-label="Описание стиля">i</button><span class="tip" id="styleTip"></span>':""}</span>
       <div class="seg" data-key="${p.key}">
         <button data-m="random" class="on">Случайно</button>
-        <button data-m="ai">AI подберёт</button>
+        <button data-m="combo">Комбинированный</button>
         <button data-m="manual">Вручную</button>
       </div>
     </div>
@@ -317,18 +327,39 @@ function renderManual(key){
   if(state[key].mode!=="manual"){box.className="manual-box";box.innerHTML="";return}
   box.className="manual-box open";
   box.innerHTML = p.multi
-    ? `<div class="chips">${p.options.map(o=>`<button class="chip" data-v="${o}">${o}</button>`).join("")}</div>`
+    ? `<div class="chips">${p.options.map(o=>`<button class="chip" data-v="${o}">${o}</button>`).join("")}</div><div id="subdirBox" style="margin-top:9px"></div>`
     : `<select><option value="">— выберите значение —</option>${p.options.map(o=>`<option>${o}</option>`).join("")}</select>`;
   if(p.multi){
     box.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{
       const v=c.dataset.v, arr=state[key].value;
       const i=arr.indexOf(v); i>=0?arr.splice(i,1):arr.push(v);
       c.classList.toggle("on");
+      if(key==="direction")renderSubdirs();
     });
+    if(key==="direction")renderSubdirs();
   } else {
     box.querySelector("select").onchange=e=>{state[key].value=e.target.value||null;if(key==="style")setStyleTip();};
   }
   setStyleTip();
+}
+function renderSubdirs(){
+  const box=$("subdirBox"); if(!box)return;
+  const sel=state.direction.value;
+  state.subdir=null; state.posterType=null;
+  if(sel.length!==1||!SUBDIRS[sel[0]]){box.innerHTML="";return;}
+  box.innerHTML=`<select id="subdirSel"><option value="">— выбери поднаправление —</option>${SUBDIRS[sel[0]].map(o=>`<option>${o}</option>`).join("")}</select><div id="posterBox" style="margin-top:8px"></div>`;
+  $("subdirSel").onchange=e=>{
+    state.subdir=e.target.value||null;
+    renderPosterType(sel[0],state.subdir);
+  };
+}
+function renderPosterType(dir,sub){
+  const pb=$("posterBox"); if(!pb)return;
+  state.posterType=null;
+  pb.innerHTML=(dir==="Графический дизайн"&&sub==="Постер")
+    ? `<select id="posterSel"><option value="">— тип постера —</option>${POSTER_TYPES.map(o=>`<option>${o}</option>`).join("")}</select>`:"";
+  const ps=$("posterSel");
+  if(ps)ps.onchange=e=>state.posterType=e.target.value||null;
 }
 function setStyleTip(){
   const btn=$("styleInfo"); if(btn)btn.style.display=lastTZ?"inline-flex":"none";
@@ -355,15 +386,19 @@ function resolveParams(){
   const r={};
   const dir=state.direction;
   r.direction = dir.mode==="manual"&&dir.value.length ? rnd(dir.value)
-              : dir.mode==="ai" ? smartDirection() : rnd(DIRS);
+              : dir.mode==="combo" ? combine(DIRS) : rnd(DIRS);
   r.level = state.level.mode==="manual"&&state.level.value ? state.level.value
-          : state.level.mode==="ai" ? weightedLevel() : rnd(LEVELS);
-  r.task_type = state.task_type.mode==="manual"&&state.task_type.value ? state.task_type.value : rnd(TYPES);
-  r.format = state.format.mode==="manual"&&state.format.value ? state.format.value : rnd(FORMATS);
-  r.industry = state.industry.mode==="manual"&&state.industry.value ? state.industry.value : rnd(INDUSTRIES);
-  r.style = state.style.mode==="manual"&&state.style.value ? state.style.value : rnd(Object.keys(STYLE_LIB));
+          : state.level.mode==="combo" ? combine(LEVELS) : rnd(LEVELS);
+  r.task_type = state.task_type.mode==="manual"&&state.task_type.value ? state.task_type.value
+          : state.task_type.mode==="combo" ? combine(TYPES) : rnd(TYPES);
+  r.format = state.format.mode==="manual"&&state.format.value ? state.format.value
+          : state.format.mode==="combo" ? combine(FORMATS) : rnd(FORMATS);
+  r.industry = state.industry.mode==="manual"&&state.industry.value ? state.industry.value
+          : state.industry.mode==="combo" ? combine(INDUSTRIES) : rnd(INDUSTRIES);
+  r.style = state.style.mode==="manual"&&state.style.value ? state.style.value
+          : state.style.mode==="combo" ? combine(Object.keys(STYLE_LIB)) : rnd(Object.keys(STYLE_LIB));
   r.audience = state.audience.mode==="manual"&&state.audience.value ? state.audience.value
-             : state.audience.mode==="ai" ? aiAudience(r) : rnd(AUD_TPL);
+             : state.audience.mode==="combo" ? combine(AUD_TPL) : rnd(AUD_TPL);
   r.device=pickIf($("optDevice").value,["Desktop","Mobile","Адаптив"]);
   r.screens=pickIf($("optScreens").value,["1","3–5","5+"]);
   r.elements=[...document.querySelectorAll("#optElements input:checked")].map(i=>i.value);
@@ -413,8 +448,127 @@ function refsBlock(r){
 function criteriaBlock(){
   return ["Соответствие выбранному стилю и палитре","Читаемость и иерархия типографики","Логичная структура и навигация","Единство визуального языка во всех материалах","Аккуратность исполнения (сетка, отступы, выравнивание)","Работоспособность в реальных носителях/разрешениях","Оригинальность: задание решено без шаблонных клише"];
 }
+const combine=arr=>{const a=rnd(arr);if(arr.length<2)return a;let b=rnd(arr);while(b===a)b=rnd(arr);return `${a} + ${b}`};
+function styleEntry(name){
+  if(STYLE_LIB[name])return STYLE_LIB[name];
+  const parts=String(name).split(" + ").map(p=>STYLE_LIB[p]).filter(Boolean);
+  if(parts.length){
+    const pal=parts.length>1?[...parts[0].palette.slice(0,2),...parts[1].palette.slice(0,2)]:parts[0].palette;
+    return {palette:pal,fonts:parts.map(p=>p.fonts).join(" / "),graphics:parts.map(p=>p.graphics).join(" + "),mood:parts.map(p=>p.mood).join(" + "),desc:parts.map(p=>p.desc).join(" ")};
+  }
+  return null;
+}
+
+/* ==================== ПОДНАПРАВЛЕНИЯ ==================== */
+const SUBDIRS={
+ "Графический дизайн":["Постер","Иллюстрация","Визитка","Упаковка","Инфографика","Обложка","Баннер","Мерч"],
+ "Брендинг и айдентика":["Логотип","Фирменный стиль","Брендбук","Ребрендинг","Айдентика события","Персональный бренд"],
+ "UI/UX":["Мобильное приложение","Веб-приложение","Лендинг","E-commerce","Игровой интерфейс","Онбординг"],
+ "Вёрстка (HTML/CSS)":["Лендинг","Многостраничный сайт","Компонент","Email-шаблон","Анимация"],
+ "3D":["Предмет","Персонаж","Сцена","Иконка","Упаковка","Анимация"]
+};
+const POSTER_TYPES=["По цитате из песни","По цитате из книги","По цитате философа","Кинопостер (по фильму)","Постер для персонажа","По цветовой гамме","По заданной сетке","Мотивационный","Социальный","Типографический","Постер-коллаж","В стиле художника","Абстрактный","Для события"];
+const SONG_QUOTES=[{t:"Перемен! — требуют наши сердца",a:"Виктор Цой",s:"«Перемен!»"},{t:"Звезда по имени Солнце",a:"Виктор Цой",s:"«Звезда по имени Солнце»"},{t:"На заре ты её не буди",a:"группа «Земляне»",s:"«На заре»"},{t:"Группа крови на рукаве",a:"Виктор Цой",s:"«Группа крови»"},{t:"Город золотой, город, которого нет",a:"Борис Гребенщиков, «Аквариум»",s:"«Город золотой»"}];
+const BOOK_QUOTES=[{t:"Все счастливые семьи похожи друг на друга, каждая несчастливая семья несчастлива по-своему",author:"Лев Толстой",book:"«Анна Каренина»"},{t:"Человек!.. Это звучит гордо!",author:"Максим Горький",book:"«На дне»"},{t:"Что разум человека может постигнуть и во что он может поверить, того он способен достичь",author:"Наполеон Хилл",book:"«Думай и богатей»"},{t:"Свобода есть возможность сказать, что дважды два — четыре",author:"Джордж Оруэлл",book:"«1984»"},{t:"Война — это мир. Свобода — это рабство. Незнание — сила",author:"Джордж Оруэлл",book:"«1984»"}];
+const PHILO_QUOTES=[{t:"Знание — сила",a:"Фрэнсис Бэкон",era:"эпоха Возрождения (XVI–XVII вв.)"},{t:"Жизнь без исследования жизни не стоит того, чтобы житься",a:"Сократ",era:"Античность (V в. до н. э.)"},{t:"Я мыслю, следовательно, существую",a:"Рене Декарт",era:"Новое время (XVII в.)"},{t:"Благо есть то, к чему влечётся всякая вещь",a:"Барух Спиноза",era:"Новое время (XVII в.)"},{t:"Свобода не есть произвол — она есть признание необходимости",a:"Гегель",era:"Новейшее время (XIX в.)"}];
+const MOVIES=[{t:"«Бегущий по лезвию 2049»",g:"sci-fi нуар",d:"Дени Вильнёв",img:"огромный город в оранжевой пыли, голограмма-гигант"},{t:"«Интерстеллар»",g:"sci-fi драма",d:"Кристофер Нолан",img:"червоточина над кукурузным полем, одинокий космонавт"},{t:"«Джентльмены»",g:"криминальная комедия",d:"Гай Ричи",img:"английский паб, костюмы в клетку, дым сигар"},{t:"«Джанго освобождённый»",g:"вестерн",d:"Квентин Тарантино",img:"красная геометрия южных плантаций, силуэты верховых"},{t:"«Драйв»",g:"неонуар",d:"Николас Виндинг Рефн",img:"ночной Лос-Анджелес, неон, куртка со скорпионом"},{t:"«Паразиты»",g:"триллер-сатира",d:"Пон Чжун Хо",img:"лестница между мирами бедных и богатых"}];
+const CHARACTERS=[{n:"Геральт",u:"«Ведьмак»",c:"суровый охотник на чудовищ с моральной неоднозначностью",trait:"седые волосы и медальон с волком"},{n:"Тайлер Дёрден",u:"«Бойцовский клуб»",c:"анархист-харизматик, разрушение старого мира",trait:"красная кожаная куртка и мыло"},{n:"Принцесса Лейя",u:"«Звёздные войны»",c:"лидер Сопротивления: ирония, достоинство, сила",trait:"причёска «уши» и белый костюм"},{n:"Санса Старк",u:"«Игра престолов»",c:"путь от наивной девочки до правительницы Севера",trait:"рыжие волосы и корона Севера"},{n:"Харли Квинн",u:"DC",c:"хаотичная, яркая, непредсказуемая антигероиня",trait:"бейсбольная бита и розово-голубые косы"},{n:"Ганнибал Лектер",u:"«Молчание ягнят»",c:"интеллектуальный монстр со вкусом к прекрасному",trait:"маска-гриф и безупречный вкус"}];
+const GAMUTS=[{name:"тёплая",pal:["#E76F51","#F4A261","#FFD166"]},{name:"холодная",pal:["#0A6E7C","#457B9D","#A8DADC"]},{name:"контрастная",pal:["#0A0A0A","#FF3B30","#FFFFFF"]},{name:"приглушённая",pal:["#6B705C","#A5A58D","#D4C7B0"]}];
+const GRIDS=[{n:"модульная сетка",r:"размещай элементы строго по модулям, соблюдай единый ритм и выравнивание"},{n:"золотое сечение",r:"ключевой объект — в точке золотого сечения, вспомогательные элементы — по спирали"},{n:"12-колоночная сетка",r:"используй 12 колонок, отступы только кратные базовому модулю"}];
+const MOTIV_TOPICS=["ранние подъёмы и режим дня","спорт как привычка, а не подвиг","доводить начатое до конца","маленькие шаги каждый день","цифровой детокс"];
+const SOCIAL_TOPICS=["экология и переработка отходов","ментальное здоровье","цифровая гигиена","донорство крови","доступное образование для всех"];
+const ARTISTS=["Пабло Пикассо (кубизм)","Пит Мондриан (неопластицизм)","Казимир Малевич (супрематизм)","Густав Климт","Василий Кандинский","Энди Уорхол (поп-арт)","Мауриц Эшер","Сальвадор Дали (сюрреализм)","Кацусика Хокусай","Айвазовский (романтизм)"];
+const ABSTRACT_MOODS=["хаос","покой","энергия","тревога","экстаз","пустота"];
+const EVENTS=[{n:"Фестиваль «Северный свет»",d:"14–16 августа 2026",p:"Санкт-Петербург, Севкабель Порт",t:"музыкальный фестиваль"},{n:"Конференция DesignMinds",d:"9 октября 2026",p:"Москва, площадка «Фланель»",t:"дизайн-конференция"},{n:"Хакатон Code&Craft",d:"21–23 ноября 2026",p:"Казань, IT-парк",t:"хакатон"},{n:"Выставка «Новая реальность»",d:"5–20 декабря 2026",p:"Екатеринбург, Ельцин-центр",t:"выставка медиаискусства"},{n:"Пробег «Весенний гром»",d:"19 апреля 2027",p:"Сочи, Олимпийский парк",t:"городской марафон"},{n:"Ярмарка «Ручная работа»",d:"3–5 июля 2026",p:"Нижний Новгород, Стрелка",t:"крафт-ярмарка"}];
+
+function paletteHTML(colors){
+  return `<div class="pal-row">${colors.map(c=>`<div class="pal-item"><span class="pal-chip" style="background:${c}"></span><span class="pal-hex">${c}</span><button class="pal-copy" data-hex="${c}" type="button" title="Скопировать HEX">копировать</button><span class="pal-toast">Скопировано!</span></div>`).join("")}</div>`;
+}
+const POSTER_CTA=["Призыв к конкретному действию — здесь и сейчас","Покажи масштаб проблемы и путь решения","Сделай так, чтобы зритель захотел изменить привычку"];
+function posterShort(type){
+  const L=[], mood=()=>rnd(ABSTRACT_MOODS);
+  let palette=null;
+  switch(type){
+    case "По цитате из песни":{const q=rnd(SONG_QUOTES);L.push(`Цитата: «${q.t}»`,`Исполнитель: ${q.a}`,`Песня: ${q.s}`,`Настроение: ${mood()}`);break;}
+    case "По цитате из книги":{const q=rnd(BOOK_QUOTES);L.push(`Цитата: «${q.t}»`,`Автор: ${q.author}`,`Книга: ${q.book}`,`Настроение: ${mood()}`);break;}
+    case "По цитате философа":{const q=rnd(PHILO_QUOTES);L.push(`Цитата: «${q.t}»`,`Автор: ${q.a}`,`Эпоха: ${q.era}`,`Настроение: ${mood()}`);break;}
+    case "Кинопостер (по фильму)":{const m=rnd(MOVIES);L.push(`Фильм: ${m.t}`,`Режиссёр: ${m.d}`,`Жанр: ${m.g}`,`Ключевой образ: ${m.img}`);break;}
+    case "Постер для персонажа":{const c=rnd(CHARACTERS);L.push(`Персонаж: ${c.n}`,`Вселенная: ${c.u}`,`Характер: ${c.c}`,`Ключевая черта: ${c.trait}`);break;}
+    case "По цветовой гамме":{const g0=rnd(GAMUTS);palette=g0.pal;L.push(`Настроение: ${g0.name}`);break;}
+    case "По заданной сетке":{const g0=rnd(GRIDS);L.push(`Тип сетки: ${g0.n}`,`Правила размещения: ${g0.r}`,`Цвета и содержание — свободны`);break;}
+    case "Мотивационный":L.push(`Тема: ${rnd(MOTIV_TOPICS)}`,`Ключевая мысль: сформулируй сам — одной фразой, которую не стыдно повесить на стену`);break;
+    case "Социальный":L.push(`Проблема: ${rnd(SOCIAL_TOPICS)}`,`Призыв: ${rnd(POSTER_CTA)}`);break;
+    case "Типографический":L.push(`Тема: ${rnd([...MOTIV_TOPICS,...SOCIAL_TOPICS])}`,`Настроение: ${mood()}`,`Правило: вся композиция — из букв, без графики`);break;
+    case "Постер-коллаж":L.push(`Тема: ${rnd([...MOTIV_TOPICS,...SOCIAL_TOPICS])}`,`Требование: собрать композицию из 5+ фрагментов (фото, текстуры, вырезки)`);break;
+    case "В стиле художника":L.push(`Художник/движение: ${rnd(ARTISTS)}`);break;
+    case "Абстрактный":L.push(`Настроение: ${mood()}`);break;
+    case "Для события":{const e=rnd(EVENTS);L.push(`Событие: ${e.n}`,`Дата: ${e.d}`,`Место: ${e.p}`,`Тип: ${e.t}`);break;}
+    default:L.push("Суть задания — на твоё усмотрение.");
+  }
+  const S=[{h:"Суть задания",list:L}];
+  if(palette)S.push({h:"Палитра",palette});
+  S.push({h:"Свобода действий",p:"Формат — плакат A2. Композиция, цвет и типографика — на твоё усмотрение.",remark:true});
+  return S;
+}
+function posterBrief(type){
+  switch(type){
+    case "По цитате из песни":{const q=rnd(SONG_QUOTES);return `Цитата: «${q.t}» — ${q.a}, песня ${q.s}. Настроение: ${rnd(ABSTRACT_MOODS)}. Цвета, шрифты и композиция — на твоё усмотрение.`;}
+    case "По цитате из книги":{const q=rnd(BOOK_QUOTES);return `Цитата: «${q.t}» — ${q.author}, ${q.book}. Настроение: ${rnd(ABSTRACT_MOODS)}. Цвета, шрифты и композиция — на твоё усмотрение.`;}
+    case "По цитате философа":{const q=rnd(PHILO_QUOTES);return `Цитата: «${q.t}» — ${q.a} (${q.era}). Настроение: ${rnd(ABSTRACT_MOODS)}. Цвета, шрифты и композиция — на твоё усмотрение.`;}
+    case "Кинопостер (по фильму)":{const m=rnd(MOVIES);return `Фильм: ${m.t}. Жанр: ${m.g}. Режиссёр: ${m.d}. Ключевой образ: ${m.img}. Расположение элементов и палитра — свободны.`;}
+    case "Постер для персонажа":{const c=rnd(CHARACTERS);return `Персонаж: ${c.n}. Вселенная: ${c.u}. Характер: ${c.c}. Ключевая черта: ${c.trait}. Стиль и композиция — свободны.`;}
+    case "По цветовой гамме":{const g0=rnd(GAMUTS);return `Палитра: ${g0.pal.join(", ")} (настроение — ${g0.name}). О композиции, шрифтах и сюжете бриф молчит — всё на усмотрение дизайнера.`;}
+    case "По заданной сетке":{const g0=rnd(GRIDS);return `Сетка: ${g0.n}. Правила размещения: ${g0.r}. Цвета и содержание — свободны.`;}
+    case "Мотивационный":return `Тема: ${rnd(MOTIV_TOPICS)}. Ключевую мысль сформулируй сам. Визуальные решения — свободны.`;
+    case "Социальный":return `Тема: ${rnd(SOCIAL_TOPICS)}. Ключевую мысль сформулируй сам. Визуальные решения — свободны.`;
+    case "Типографический":return `Правило: вся композиция состоит только из букв, никакой графики. Тема: ${rnd([...MOTIV_TOPICS,...SOCIAL_TOPICS])}. Настроение: ${rnd(ABSTRACT_MOODS)}.`;
+    case "Постер-коллаж":return `Тема: ${rnd([...MOTIV_TOPICS,...SOCIAL_TOPICS])}. Требование: собрать композицию из 5+ фрагментов (фото, текстуры, вырезки). Источники и композиция — свободны.`;
+    case "В стиле художника":return `Художник/движение: ${rnd(ARTISTS)}. Содержание постера — на твоё усмотрение.`;
+    case "Абстрактный":return `Настроение: ${rnd(ABSTRACT_MOODS)}. Только настроение. Всё остальное — на дизайнере.`;
+    case "Для события":{const e=rnd(EVENTS);return `Событие: ${e.n}. Дата: ${e.d}. Место: ${e.p}. Тип: ${e.t}. Обязательны: название, дата, место. Дизайн — свободен.`;}
+    default:return "Формулировка задания — на твоё усмотрение.";
+  }
+}
+const SUB_BRIEF={
+ "Иллюстрация":(r,g)=>`Тема: ${rnd([...MOTIV_TOPICS,...SOCIAL_TOPICS])}. Настроение и техника иллюстрации — на твоё усмотрение.`,
+ "Визитка":(r,g)=>`Компания: «${g.company}». Сфера: ${r.industry.toLowerCase()}. Укажи выдуманные должность и контакты.`,
+ "Упаковка":(r,g)=>`Продукт: ${rnd(["напиток","кондитерское изделие","косметика","чай","кофе","соус"])} для «${g.company}». Формат и материал — на твоё усмотрение.`,
+ "Инфографика":(r,g)=>`Тема: ${rnd(["климат","здоровье","экономика","транспорт","образование","космос"])}. Данные придумай сам, логика подачи — нет.`,
+ "Обложка":(r,g)=>`Формат: ${rnd(["книга","музыкальный альбом","журнал"])}. Название и автора придумай (можно связать с «${g.company}»).`,
+ "Баннер":(r,g)=>`Площадка: ${rnd(["соцсети","сайт","наружная реклама"])}. Цель: ${rnd(["запуск продукта","акция","информирование"])} для «${g.company}».`,
+ "Мерч":(r,g)=>`Продукт: ${rnd(["футболка","кружка","шоппер","стикерпак"])}. Тема принта — на усмотрение (в духе «${g.company}»).`,
+ "Логотип":(r,g)=>`Компания: «${g.company}». Сфера: ${r.industry.toLowerCase()}. Больше ничего не дано — решай сам.`,
+ "Фирменный стиль":(r,g)=>`Компания: «${g.company}». Носители: ${r.carriers}. Остальное — свободно.`,
+ "Брендбук":(r,g)=>`Компания: «${g.company}». Объём: 15+ страниц. Структура — на твоё усмотрение.`,
+ "Ребрендинг":(r,g)=>`Компания: «${g.company}». Что меняем: ${rnd(["логотип и палитру","упаковку","тон коммуникации"])}. Сохрани узнаваемость.`,
+ "Айдентика события":(r,g)=>{const e=rnd(EVENTS);return `Событие: ${e.n}. Дата: ${e.d}. Место: ${e.p}. Тип: ${e.t}.`;},
+ "Персональный бренд":(r,g)=>`Персона: ${rnd(["блогер","фотограф","шеф-повар","тренер","музыкант","разработчик"])}. Имя придумай.`,
+ "Мобильное приложение":(r,g)=>`Продукт: приложение «${g.company}». Платформа: ${r.device==="Desktop"?"iOS + Android":r.device}. Цель: ${rnd(["первая активация","первый заказ","подписка"])}.`,
+ "Веб-приложение":(r,g)=>`Продукт: веб-приложение «${g.company}». Ключевой сценарий придумай сам.`,
+ "Лендинг":(r,g)=>`Продукт: «${g.company}». Цель страницы: ${rnd(["конверсия в заказ","регистрация","заявка на демо"])}.`,
+ "E-commerce":(r,g)=>`Категория товаров: ${rnd(["одежда","косметика","электроника","еда","книги"])}. Особенность: ${rnd(["подписка","персонализация","быстрая доставка"])}.`,
+ "Игровой интерфейс":(r,g)=>`Жанр игры: ${rnd(["RPG","стратегия","хоррор","ритм-игра","квест"])}. Экраны: главное меню + HUD.`,
+ "Онбординг":(r,g)=>`Продукт: «${g.company}». Цель онбординга: ${rnd(["активация","первый заказ","подписка"])}. Количество шагов — на твоё усмотрение.`,
+ "Многостраничный сайт":(r,g)=>`Тематика: ${r.industry.toLowerCase()}. Страницы: главная, каталог/услуги, о компании, контакты (минимум).`,
+ "Компонент":(r,g)=>`Компонент: ${rnd(["карточка товара","модальное окно","таблица с данными","форма входа","навигация"])}. Состояния: default, hover, disabled, loading.`,
+ "Email-шаблон":(r,g)=>`Тип письма: ${rnd(["промо-рассылка","подтверждение заказа","возвращение клиента","анонс продукта"])}. Продукт: «${g.company}».`,
+ "Анимация":(r,g)=>`Элемент: ${rnd(["кнопка","логотип","3D-модель","иллюстрация","интерфейс"])}. Тип анимации: ${rnd(["появление при скролле","hover-реакция","загрузка","микровзаимодействие"])}.`,
+ "Предмет":(r,g)=>`Объект: ${rnd(["кружка","наушники","упаковка кофе","велосипед","лампа","часы"])}. Материал — на твоё усмотрение.`,
+ "Персонаж":(r,g)=>`Роль: ${rnd(["главный герой игры","маскот бренда","NPC-торговец","аватар пользователя"])}. Стиль — на твоё усмотрение.`,
+ "Сцена":(r,g)=>`Локация: ${rnd(["киберпанк-улочка","уютная кофейня","морской берег","космическая станция","лесная поляна"])}. Настроение — на твоё усмотрение.`,
+ "Иконка":(r,g)=>`Назначение: иконка для «${g.company}». Стиль и метафора — на твоё усмотрение.`
+};
+function subdirBrief(r,subdir,g){
+  const f=SUB_BRIEF[subdir];
+  return f?f(r,g):"Детали — на твоё усмотрение.";
+}
+function subdirSection(r,subdir,posterType,g){
+  const p=subdir==="Постер"&&posterType?posterBrief(posterType):subdirBrief(r,subdir,g);
+  return {h:`Поднаправление: ${subdir}${posterType?` → ${posterType}`:""}`,p};
+}
+
 function buildIdentity(r,company){
-  const s=STYLE_LIB[r.style];
+  const s=styleEntry(r.style)||rnd(Object.values(STYLE_LIB));
   return {palette:s.palette,fonts:s.fonts,logo:`Знак для «${company}»: абстрактная метафора, связанная с «${r.industry.toLowerCase()}», в эстетике стиля «${r.style}» (текстовое описание, без генерации изображений)`,graphics:s.graphics};
 }
 /* ==================== РЕАЛЬНЫЕ КОМПАНИИ ==================== */
@@ -513,10 +667,26 @@ function generate(surprise){
   const src=document.querySelector('input[name=src]:checked').value;
   const g = src==="db" ? fromDB(r) : composeAI(r);
   if(surprise)applyHoles(r,g);
-  const style=STYLE_LIB[g.style]||STYLE_LIB[r.style]||rnd(Object.values(STYLE_LIB));
+  const style=styleEntry(g.style)||styleEntry(r.style)||rnd(Object.values(STYLE_LIB));
   const idn=g.identity;
   const low=v=>v===HOLE?v:String(v).toLowerCase();
   const dir=g.direction||r.direction;
+  let subdir=null, posterType=null;
+  if(!g.db&&typeof SUBDIRS[r.direction]!=="undefined"){
+    if(surprise){
+      subdir=rnd(SUBDIRS[r.direction]);
+      if(subdir==="Постер")posterType=rnd(POSTER_TYPES);
+    } else if(state.direction.mode==="manual"&&state.direction.value.length===1&&state.direction.value[0]===r.direction){
+      subdir=state.subdir||null;
+      if(subdir==="Постер")posterType=state.posterType||null;
+    }
+  }
+  if(subdir==="Постер"&&posterType){
+    lastTZ={r,g,S:posterShort(posterType),src,poster:true,posterType,title:`Постер: ${posterType}`};
+    setStyleTip();
+    renderTZ(lastTZ);
+    return;
+  }
   const S=[];
   S.push({h:"Компания",p:`Бренд <b>«${g.company}»</b> — сфера «${low(g.industry||r.industry)}».${g.real?" Реальная компания: сохраняй узнаваемость бренда, предлагай обоснованные решения.":""}${g.db?` Задание из базы №${g.dbId}.`:""}`});
   const paramsList=[
@@ -538,11 +708,13 @@ function generate(surprise){
   if(dir==="3D"){
     paramsList.push(`Софт: ${r.soft}`,`Тип модели: ${low(r.model)}`,`Рендер: ${low(r.render)}`);
   }
+  if(subdir)paramsList.push(`Поднаправление: ${subdir}${posterType?` → ${posterType}`:""}`);
   S.push({h:"Параметры задания",list:paramsList});
   S.push({h:"Цель задания",p:`${r.task_type}: ${g.brief}`});
+  if(subdir)S.push(subdirSection(r,subdir,posterType,g));
   if(r.mood)S.push({h:"Стиль и мудборд",p:`Стиль — «${g.style||r.style}». Настроение: ${style.mood}. Ключевые слова для мудборда: ${r.industry.toLowerCase()}, ${(g.style||r.style).toLowerCase()}, ${style.graphics.split(",")[0].toLowerCase()}.`});
   else S.push({h:"Стиль",p:`Стиль — «${g.style||r.style}».`});
-  S.push({h:"Айдентика (текстовое описание)",p:`Палитра: ${Array.isArray(idn.palette)?idn.palette.join(", "):idn.palette}.<br>Шрифтовая пара: ${idn.fonts}.<br>Логотип: ${idn.logo}.<br>Графические элементы: ${idn.graphics}.`});
+  S.push({h:"Айдентика (текстовое описание)",p:`Палитра: ${Array.isArray(idn.palette)?idn.palette.join(", "):idn.palette}.<br>Шрифтовая пара: ${idn.fonts}.<br>Логотип: ${idn.logo}.<br>Графические элементы: ${idn.graphics}.`,palette:Array.isArray(idn.palette)?idn.palette:null});
   if(r.volume==="Подробное ТЗ"){
     S.push({h:"Технические требования",p:techBlock({...r,direction:g.direction||r.direction})});
     S.push({h:"Что нужно сделать (пошагово)",list:stepsBlock({...r,direction:g.direction||r.direction})});
@@ -555,31 +727,36 @@ function generate(surprise){
   setStyleTip();
   renderTZ(lastTZ);
 }
-function renderTZ({r,g,S,src}){
+function renderTZ(tz){
+  const {r,g,S,src}=tz;
   $("placeholder").classList.add("hidden");
   const out=$("tzOut"); out.classList.remove("hidden");
   $("tzActions").classList.remove("hidden");
+  const chips = tz.poster
+    ? ["Графический дизайн","Постер",tz.posterType,r.level]
+    : [src==="db"?"Источник: база (100 заданий)":"Источник: ручная настройка",g.direction||r.direction,g.level||r.level,r.task_type,g.industry||r.industry,g.style||r.style];
   out.innerHTML=`
    <div class="meta-chips">
-     <span class="m">${src==="db"?"Источник: база (100 заданий)":"Источник: ручная настройка"}</span>
-     <span class="m">${g.direction||r.direction}</span>
-     <span class="m">${g.level||r.level}</span>
-     <span class="m">${r.task_type}</span>
-     <span class="m">${g.industry||r.industry}</span>
-     <span class="m">${g.style||r.style}</span>
+     ${chips.map(c=>`<span class="m">${c}</span>`).join("")}
    </div>
-   <div class="tz-title">${g.title}</div>
-   ${S.map((s,i)=>`<div class="tz-section"><h4>${i+1}. ${s.h}</h4>${s.p?`<p>${s.p}</p>`:`<ul>${s.list.map(li=>`<li>${li}</li>`).join("")}</ul>`}
-     ${s.h.startsWith("Айдентика")?`<div class="palette">${Array.isArray(g.identity.palette)?g.identity.palette.map(c=>`<div class="sw" style="background:${c}"><small>${c}</small></div>`).join(""):`<p style="font-size:13.5px;font-weight:700">${g.identity.palette}</p>`}</div>`:""}
-   </div>`).join("")}`;
+   <div class="tz-title">${tz.title||g.title}</div>
+   ${S.map((s,i)=>`<div class="tz-section"><h4>${i+1}. ${s.h}</h4>${s.p?`<p class="${s.remark?"tz-remark":""}">${s.p}</p>`:""}${s.list?`<ul>${s.list.map(li=>`<li>${li}</li>`).join("")}</ul>`:""}${s.palette?paletteHTML(s.palette):""}</div>`).join("")}`;
+  out.querySelectorAll(".pal-copy").forEach(b=>b.onclick=async()=>{
+    try{
+      await navigator.clipboard.writeText(b.dataset.hex);
+      const t=b.parentElement.querySelector(".pal-toast");
+      t.classList.add("show");
+      setTimeout(()=>t.classList.remove("show"),1500);
+    }catch(e){}
+  });
   $("resultCard").scrollIntoView({behavior:"smooth",block:"nearest"});
 }
 
 /* ==================== ЭКСПОРТ ==================== */
 function tzPlain(){
   const {r,g,S}=lastTZ;
-  let t=`${g.title.toUpperCase()}\nСгенерировано: ${new Date().toLocaleString("ru-RU")}\nИсточник: ${lastTZ.src==="db"?"база заданий":"ручная настройка"}\nНастройки: ${g.direction||r.direction} · ${g.level||r.level} · ${r.task_type} · ${r.format}\n${"—".repeat(46)}\n\n`;
-  S.forEach((s,i)=>{t+=`${i+1}. ${s.h}\n`;t+= s.p? s.p.replace(/<[^>]+>/g,"")+"\n\n" : s.list.map(li=>"  • "+li.replace(/<[^>]+>/g,"")).join("\n")+"\n\n";});
+  let t=`${(lastTZ.title||g.title).toUpperCase()}\nСгенерировано: ${new Date().toLocaleString("ru-RU")}\nИсточник: ${lastTZ.src==="db"?"база заданий":"ручная настройка"}\nНастройки: ${g.direction||r.direction} · ${g.level||r.level} · ${r.task_type} · ${r.format}\n${"—".repeat(46)}\n\n`;
+  S.forEach((s,i)=>{t+=`${i+1}. ${s.h}\n`;t+= s.p? s.p.replace(/<[^>]+>/g,"")+"\n\n" : s.list.map(li=>"  • "+li.replace(/<[^>]+>/g,"")).join("\n")+"\n\n";if(s.palette)t+="  Палитра: "+s.palette.join(", ")+"\n\n";});
   return t;
 }
 function rtfEscape(s){
